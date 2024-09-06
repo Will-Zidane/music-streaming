@@ -3,8 +3,8 @@ import Link from 'next/link';
 
 const Header = () => {
   return (
-    <header className="w-full flex items-center">
-      <Link href="/">
+    <header className="w-full flex pl-2 items-center">
+      <Link href="/public">
           <Image
             src="/music-streaming-icon.webp"
             width={60}
