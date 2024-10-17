@@ -1,47 +1,51 @@
+// components/Playlist/Playlist.js
 import React, { useState, useEffect } from 'react';
 import { Howl } from 'howler';
 
-// Playlist data
 export const playlistData = [
   {
     title: "Houdini",
     artist: "Eminem",
     url: "audio/y2meta.com - Eminem - Houdini [Official Music Video] (128 kbps).mp3",
+    coverArt: "/api/placeholder/56/56"
   },
   {
     title: "See You Again",
     artist: "Charlie Puth ft. Wiz Khalifa",
     url: "/audio/y2meta.com - Wiz Khalifa - See You Again ft. Charlie Puth [Official Video] Furious 7 Soundtrack (128 kbps).mp3",
+    coverArt: "/api/placeholder/56/56"
   },
 ];
 
 const PlaylistComponent = ({ currentTrackIndex, setCurrentTrackIndex, isPlaying, setIsPlaying }) => {
   const [trackDurations, setTrackDurations] = useState({});
 
-
-
   useEffect(() => {
     playlistData.forEach((track, index) => {
-      const sound = new Howl({
+      const tempSound = new Howl({
         src: [track.url],
         html5: true,
       });
 
-
-      sound.once('load', () => {
+      tempSound.once('load', () => {
         setTrackDurations(prevDurations => ({
           ...prevDurations,
-          [index]: sound.duration()
+          [index]: tempSound.duration()
         }));
+        tempSound.unload(); // Unload after getting duration
       });
     });
   }, []);
 
-
-
   const handleTrackSelect = (index) => {
-    setCurrentTrackIndex(index);
-    setIsPlaying(true);
+    if (currentTrackIndex === index) {
+      // If clicking the same track, just toggle play/pause
+      setIsPlaying(!isPlaying);
+    } else {
+      // If clicking a different track, change track and start playing
+      setCurrentTrackIndex(index);
+      setIsPlaying(true);
+    }
   };
 
   const formatDuration = (duration) => {
@@ -49,6 +53,16 @@ const PlaylistComponent = ({ currentTrackIndex, setCurrentTrackIndex, isPlaying,
     const minutes = Math.floor(duration / 60);
     const seconds = Math.floor(duration % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const getButtonStyle = (index) => {
+    const isCurrentTrack = currentTrackIndex === index;
+
+    return `px-4 py-1 text-white 
+      ${isCurrentTrack && isPlaying
+      ? 'opacity-50 cursor-not-allowed'
+      : 'hover:text-emerald-300 cursor-pointer'
+    }`;
   };
 
   return (
@@ -63,25 +77,31 @@ const PlaylistComponent = ({ currentTrackIndex, setCurrentTrackIndex, isPlaying,
         </tr>
         </thead>
         <tbody>
-        {playlistData.map((track, index) => (
-          <tr
-            key={index}
-            className={`border-b border-gray-700 hover:bg-emerald-700 
-                  ${currentTrackIndex === index ? 'bg-emerald-700' : ''}`}
-          >
-            <td className="py-3 text-white">{track.title}</td>
-            <td className="py-3 text-white">{track.artist}</td>
-            <td className="py-3 text-white">{formatDuration(trackDurations[index])}</td>
-            <td className="py-3">
-              <button
-                onClick={() => handleTrackSelect(index)}
-                className="px-4 py-1 text-white hover:text-emerald-300"
-              >
-                {currentTrackIndex === index && isPlaying ? 'Playing' : 'Play'}
-              </button>
-            </td>
-          </tr>
-        ))}
+        {playlistData.map((track, index) => {
+          const isCurrentTrack = currentTrackIndex === index;
+          const isDisabled = isCurrentTrack && isPlaying;
+
+          return (
+            <tr
+              key={index}
+              className={`border-b border-gray-700 hover:bg-emerald-700 
+                  ${isCurrentTrack ? 'bg-emerald-700' : ''}`}
+            >
+              <td className="py-3 text-white">{track.title}</td>
+              <td className="py-3 text-white">{track.artist}</td>
+              <td className="py-3 text-white">{formatDuration(trackDurations[index])}</td>
+              <td className="py-3">
+                <button
+                  onClick={() => handleTrackSelect(index)}
+                  disabled={isDisabled}
+                  className={getButtonStyle(index)}
+                >
+                  {isCurrentTrack && isPlaying ? 'Now Playing' : 'Play'}
+                </button>
+              </td>
+            </tr>
+          );
+        })}
         </tbody>
       </table>
     </div>
