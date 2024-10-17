@@ -1,45 +1,40 @@
-import React, { useState, useEffect,useRef } from 'react';
-import { Howl } from 'howler';
-import { playlistData as Playlist } from '../Playlist/Playlist';
+// components/SongPlayer/SongPlayer.js
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Repeat, Shuffle, Mic2, List, Maximize2, Volume2 } from 'lucide-react';
-
+import { playlistData } from '../Playlist/Playlist';
+import AudioManager from '../../utils/AudioManager';
 
 const SongPlayer = ({ currentTrackIndex, setCurrentTrackIndex, isPlaying, setIsPlaying }) => {
-  const [sound, setSound] = useState(null);
   const [volume, setVolume] = useState(100);
   const [duration, setDuration] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
-  const [intervalId, setIntervalId] = useState(null);
   const intervalRef = useRef(null);
 
-
   useEffect(() => {
-    const newSound = new Howl({
-      src: [Playlist[currentTrackIndex].url],
-      html5: true,
-      onload: () => {
-        setDuration(newSound.duration());
-        if (isPlaying) {
-          newSound.play();
-        }
-      },
-      onend: handleNext,
+    const sound = AudioManager.init(playlistData[currentTrackIndex], handleNext);
+
+    sound.on('load', () => {
+      setDuration(sound.duration());
+      if (isPlaying) {
+        sound.play();
+      }
     });
-
-    if (sound) {
-      sound.stop();
-      sound.unload();
-    }
-
-    setSound(newSound);
-    setElapsedTime(0); // Reset elapsedTime to 0 on track change
 
     return () => {
       clearInterval(intervalRef.current);
-      newSound.unload();
     };
   }, [currentTrackIndex]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      AudioManager.play();
+      startTimer();
+    } else {
+      AudioManager.pause();
+      clearInterval(intervalRef.current);
+    }
+  }, [isPlaying]);
 
   const startTimer = () => {
     if (intervalRef.current) {
@@ -47,80 +42,43 @@ const SongPlayer = ({ currentTrackIndex, setCurrentTrackIndex, isPlaying, setIsP
     }
 
     intervalRef.current = setInterval(() => {
-      if (sound && !isSeeking) {
-        const currentSeek = sound.seek();
+      if (AudioManager.currentSound && !isSeeking) {
+        const currentSeek = AudioManager.currentSound.seek();
         setElapsedTime(currentSeek);
       }
     }, 1000);
   };
 
-
-  useEffect(() => {
-    if (sound) {
-      if (isPlaying) {
-        sound.play();
-        startTimer();
-      } else {
-        sound.pause();
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-        }
-      }
-    }
-  }, [isPlaying]);
-
-
-  useEffect(() => {
-    if (isPlaying && sound) {
-      const id = setInterval(() => {
-        if (!isSeeking) {
-          setElapsedTime(Math.floor(sound.seek() || 0));
-        }
-      }, 1000);
-      setIntervalId(id);
-      return () => clearInterval(id);
-    } else {
-      clearInterval(intervalId);
-    }
-  }, [isPlaying, sound, isSeeking]);
-
   const handleNext = () => {
     setCurrentTrackIndex((prevIndex) =>
-      prevIndex === Playlist.length - 1 ? 0 : prevIndex + 1
+      prevIndex === playlistData.length - 1 ? 0 : prevIndex + 1
     );
     setIsPlaying(true);
   };
 
   const handlePrevious = () => {
     setCurrentTrackIndex((prevIndex) =>
-      prevIndex === 0 ? Playlist.length - 1 : prevIndex - 1
+      prevIndex === 0 ? playlistData.length - 1 : prevIndex - 1
     );
   };
 
   const togglePlayPause = () => {
-    if (sound) {
-      if (isPlaying) {
-        sound.pause();
-      } else {
-        sound.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
+    setIsPlaying(!isPlaying);
   };
 
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
-    if (sound) {
-      sound.volume(newVolume / 100); // Convert volume to 0-1 scale
+    if (AudioManager.currentSound) {
+      AudioManager.currentSound.volume(newVolume / 100);
     }
   };
 
   const handleSeekChange = (e) => {
     const seekTime = parseFloat(e.target.value);
     setElapsedTime(seekTime);
-    if (sound) {
-      sound.seek(seekTime);
+    if (AudioManager.currentSound) {
+      AudioManager.currentSound.seek(seekTime);
     }
   };
 
@@ -130,11 +88,10 @@ const SongPlayer = ({ currentTrackIndex, setCurrentTrackIndex, isPlaying, setIsP
 
   const handleSeekMouseUp = () => {
     setIsSeeking(false);
-    if (sound) {
-      sound.seek(elapsedTime); // Set the sound position to the last selected elapsed time
+    if (AudioManager.currentSound) {
+      AudioManager.currentSound.seek(elapsedTime);
     }
   };
-
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
@@ -144,19 +101,17 @@ const SongPlayer = ({ currentTrackIndex, setCurrentTrackIndex, isPlaying, setIsP
 
   return (
     <div className="flex items-center justify-between w-full px-4 py-2 bg-gray-900 text-white">
-      {/* Left section: Song info */}
       <div className="flex items-center space-x-4">
-        <img src={Playlist[currentTrackIndex].coverArt} alt="Album cover" className="w-14 h-14 rounded" />
+        <img src={playlistData[currentTrackIndex].coverArt} alt="Album cover" className="w-14 h-14 rounded" />
         <div>
-          <h2 className="text-sm font-semibold">{Playlist[currentTrackIndex].title}</h2>
-          <p className="text-xs text-gray-400">{Playlist[currentTrackIndex].artist}</p>
+          <h2 className="text-sm font-semibold">{playlistData[currentTrackIndex].title}</h2>
+          <p className="text-xs text-gray-400">{playlistData[currentTrackIndex].artist}</p>
         </div>
         <button className="text-gray-400 hover:text-white">
           <Mic2 size={16} />
         </button>
       </div>
 
-      {/* Center section: Playback controls and seek bar */}
       <div className="flex flex-col items-center flex-grow mx-4">
         <div className="flex items-center space-x-4 mb-1">
           <button className="text-gray-400 hover:text-white">
@@ -194,7 +149,6 @@ const SongPlayer = ({ currentTrackIndex, setCurrentTrackIndex, isPlaying, setIsP
         </div>
       </div>
 
-      {/* Right section: Additional controls */}
       <div className="flex items-center space-x-4">
         <button className="text-gray-400 hover:text-white">
           <List size={20} />
@@ -217,6 +171,5 @@ const SongPlayer = ({ currentTrackIndex, setCurrentTrackIndex, isPlaying, setIsP
     </div>
   );
 };
-
 
 export default SongPlayer;
