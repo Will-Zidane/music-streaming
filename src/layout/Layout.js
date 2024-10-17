@@ -1,21 +1,17 @@
 import Head from "next/head";
 import React from "react";
+import Navbar from "@/layout/Header/Navbar";
+import Footer from "@/layout/Footer/Footer";
+
 export default function Layout({
-                                   pageProps,
-                                   children,
-                                   title,
-                                   desc,
-                                   logo,
-                                   footers,
+                                 children, title, desc
                                }) {
-    // console.log('pageProps in layout', pageProps)
-    return (
-        <div className="tw-bg-black-900">
-            <Head>
-                <title>{title ? `KNX SmartHome | ${title}` : "KNX SmartHome"}</title>
-                {desc && <meta name="description" content={desc} />}
-            </Head>
-            {children}
-        </div>
-    );
+  return (<div className="min-h-[380px]">
+      <Head>
+        <title>{title ? `Music Streaming | ${title}` : "Music Streaming"}</title>
+        {desc && <meta name="description" content={desc} />}
+      </Head>
+      <Navbar />
+      {children}
+    </div>);
 }
