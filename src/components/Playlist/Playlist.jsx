@@ -1,111 +1,88 @@
-// components/Playlist/Playlist.js
 import React, { useState, useEffect } from 'react';
-import { Howl } from 'howler';
+import { Clock } from 'lucide-react';
 
-export const playlistData = [
-  {
-    title: "Houdini",
-    artist: "Eminem",
-    url: "audio/y2meta.com - Eminem - Houdini [Official Music Video] (128 kbps).mp3",
-    coverArt: "/api/placeholder/56/56"
-  },
-  {
-    title: "See You Again",
-    artist: "Charlie Puth ft. Wiz Khalifa",
-    url: "/audio/y2meta.com - Wiz Khalifa - See You Again ft. Charlie Puth [Official Video] Furious 7 Soundtrack (128 kbps).mp3",
-    coverArt: "/api/placeholder/56/56"
-  },
-];
+const formatDuration = (seconds) => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
 
-const PlaylistComponent = ({ currentTrackIndex, setCurrentTrackIndex, isPlaying, setIsPlaying }) => {
+const Playlist = ({ playlist, currentTrackIndex, onTrackSelect }) => {
   const [trackDurations, setTrackDurations] = useState({});
 
   useEffect(() => {
-    playlistData.forEach((track, index) => {
-      const tempSound = new Howl({
-        src: [track.url],
-        html5: true,
-      });
+    const loadTrackDurations = async () => {
+      const durations = {};
 
-      tempSound.once('load', () => {
-        setTrackDurations(prevDurations => ({
-          ...prevDurations,
-          [index]: tempSound.duration()
-        }));
-        tempSound.unload(); // Unload after getting duration
-      });
-    });
-  }, []);
+      for (let i = 0; i < playlist.length; i++) {
+        const track = playlist[i];
+        const audio = new Audio(track.url);
 
-  const handleTrackSelect = (index) => {
-    if (currentTrackIndex === index) {
-      // If clicking the same track, just toggle play/pause
-      setIsPlaying(!isPlaying);
-    } else {
-      // If clicking a different track, change track and start playing
-      setCurrentTrackIndex(index);
-      setIsPlaying(true);
-    }
-  };
+        try {
+          await new Promise((resolve, reject) => {
+            audio.addEventListener('loadedmetadata', () => {
+              durations[i] = audio.duration;
+              resolve();
+            });
+            audio.addEventListener('error', reject);
+          });
+        } catch (error) {
+          console.error(`Error loading duration for track ${i}:`, error);
+          durations[i] = 0;
+        }
+      }
 
-  const formatDuration = (duration) => {
-    if (!duration && duration !== 0) return '--:--';
-    const minutes = Math.floor(duration / 60);
-    const seconds = Math.floor(duration % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
+      setTrackDurations(durations);
+    };
 
-  const getButtonStyle = (index) => {
-    const isCurrentTrack = currentTrackIndex === index;
-
-    return `px-4 py-1 text-white 
-      ${isCurrentTrack && isPlaying
-      ? 'opacity-50 cursor-not-allowed'
-      : 'hover:text-emerald-300 cursor-pointer'
-    }`;
-  };
+    loadTrackDurations();
+  }, [playlist]);
 
   return (
-    <div className="p-6">
-      <table className="w-full">
-        <thead>
-        <tr className="text-left border-b border-gray-700">
-          <th className="pb-2 text-gray-300">Title</th>
-          <th className="pb-2 text-gray-300">Artist</th>
-          <th className="pb-2 text-gray-300">Duration</th>
-          <th className="pb-2 text-gray-300">Action</th>
-        </tr>
-        </thead>
-        <tbody>
-        {playlistData.map((track, index) => {
-          const isCurrentTrack = currentTrackIndex === index;
-          const isDisabled = isCurrentTrack && isPlaying;
+    <div className="h-full overflow-y-auto">
+      <div className="bg-gray-900  p-4">
+        <div className="grid grid-cols-[auto,3fr,2fr,1fr,auto] gap-4 items-center text-sm  px-4 border-b border-gray-800 pb-2">
+          <div>#</div>
+          <div className={"ml-3"}>Title</div>
+          <div>Album</div>
+          <div>Date added</div>
+          <Clock size={16} />
+        </div>
 
-          return (
-            <tr
+        <div className="mt-2">
+          {playlist.map((track, index) => (
+            <div
               key={index}
-              className={`border-b border-gray-700 hover:bg-emerald-700 
-                  ${isCurrentTrack ? 'bg-emerald-700' : ''}`}
+              className={`grid grid-cols-[auto,3fr,2fr,1fr,auto] gap-4 items-center p-4 hover:bg-gray-300 rounded-md group cursor-pointer  active::text-green-100 ${
+                currentTrackIndex === index ? 'bg-gray-800/50' : ''
+              }`}
+              onClick={() => onTrackSelect(index)}
             >
-              <td className="py-3 text-white">{track.title}</td>
-              <td className="py-3 text-white">{track.artist}</td>
-              <td className="py-3 text-white">{formatDuration(trackDurations[index])}</td>
-              <td className="py-3">
-                <button
-                  onClick={() => handleTrackSelect(index)}
-                  disabled={isDisabled}
-                  className={getButtonStyle(index)}
-                >
-                  {isCurrentTrack && isPlaying ? 'Now Playing' : 'Play'}
-                </button>
-              </td>
-            </tr>
-          );
-        })}
-        </tbody>
-      </table>
+              <div className="text-gray-400 w-6">{index + 1}</div>
+
+              <div className="flex items-center gap-3">
+                <img
+                  src={track.coverArt}
+                  alt={track.title}
+                  className="w-14 h-14 rounded"
+                />
+                <div className="flex flex-col">
+                  <span className="text-white font-normal">{track.title}</span>
+                  <span className="text-sm text-gray-400">{track.artist}</span>
+                </div>
+              </div>
+
+              <div className="text-gray-400">Single</div>
+              <div className="text-gray-400">15 hours ago</div>
+              <div className="text-gray-400">
+                {trackDurations[index] ? formatDuration(trackDurations[index]) : '--:--'}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
 
-export default PlaylistComponent;
+export default Playlist;
