@@ -7,10 +7,26 @@ import Playlist from "@/components/Playlist/Playlist";
 
 const Home = () => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-
+  const playlistData = [
+    {
+      title: "Houdini",
+      artist: "Eminem",
+      url: "audio/y2meta.com - Eminem - Houdini [Official Music Video] (128 kbps).mp3",
+      coverArt: '/api/placeholder/56/56'
+    },
+    {
+      title: "See You Again",
+      artist: "Charlie Puth ft. Wiz Khalifa",
+      url: "audio/y2meta.com - Wiz Khalifa - See You Again ft. Charlie Puth [Official Video] Furious 7 Soundtrack (128 kbps).mp3",
+      coverArt: '/api/placeholder/56/56'
+    },
+    // Add more tracks as needed
+  ];
   // Assume the height of your SongPlayer. Adjust this value as needed.
   const playerHeight = 80; // in pixels
+  const handleTrackChange = (index) => {
+    setCurrentTrackIndex(index);
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -27,10 +43,9 @@ const Home = () => {
 
             <Panel minSize={30} className="bg-gray-100 rounded-md">
               <Playlist
+                playlist={playlistData}
                 currentTrackIndex={currentTrackIndex}
-                setCurrentTrackIndex={setCurrentTrackIndex}
-                isPlaying={isPlaying}
-                setIsPlaying={setIsPlaying}
+                onTrackSelect={handleTrackChange}
               />
             </Panel>
           </PanelGroup>
@@ -38,10 +53,9 @@ const Home = () => {
       </div>
       <div style={{ height: `${playerHeight}px` }} className="flex-shrink-0">
         <SongPlayer
+          playlist={playlistData}
           currentTrackIndex={currentTrackIndex}
-          setCurrentTrackIndex={setCurrentTrackIndex}
-          isPlaying={isPlaying}
-          setIsPlaying={setIsPlaying}
+          onTrackChange={handleTrackChange}
         />
       </div>
     </div>
