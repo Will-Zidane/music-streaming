@@ -1,5 +1,36 @@
 import type { Struct, Schema } from "@strapi/strapi";
 
+export interface ApiPlaylistPlaylist extends Struct.CollectionTypeSchema {
+  collectionName: "playlists";
+  info: {
+    singularName: "playlist";
+    pluralName: "playlists";
+    displayName: "Playlist";
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    title: Schema.Attribute.String;
+    artist: Schema.Attribute.String;
+    url: Schema.Attribute.String;
+    coverArt: Schema.Attribute.Media<"images" | "files" | "videos" | "audios">;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      "oneToMany",
+      "api::playlist.playlist"
+    > &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface PluginUploadFile extends Struct.CollectionTypeSchema {
   collectionName: "files";
   info: {
@@ -867,6 +898,7 @@ export interface AdminTransferTokenPermission
 declare module "@strapi/strapi" {
   export module Public {
     export interface ContentTypeSchemas {
+      "api::playlist.playlist": ApiPlaylistPlaylist;
       "plugin::upload.file": PluginUploadFile;
       "plugin::upload.folder": PluginUploadFolder;
       "plugin::i18n.locale": PluginI18NLocale;
