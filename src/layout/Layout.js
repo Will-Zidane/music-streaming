@@ -1,7 +1,6 @@
 import Head from "next/head";
 import React from "react";
 import Navbar from "@/layout/Header/Navbar";
-import Footer from "@/layout/Footer/Footer";
 
 export default function Layout({
                                  children, title, desc
