@@ -72,7 +72,7 @@ const Playlist = ({ playlist, currentTrackIndex, onTrackSelect }) => {
                 </div>
               </div>
 
-              <div className="text-gray-400">Single</div>
+              <div className="text-gray-400">{track.album}</div>
               <div className="text-gray-400">15 hours ago</div>
               <div className="text-gray-400">
                 {trackDurations[index] ? formatDuration(trackDurations[index]) : '--:--'}
