@@ -31,6 +31,32 @@ export interface ApiPlaylistPlaylist extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiSongSong extends Struct.CollectionTypeSchema {
+  collectionName: "songs";
+  info: {
+    singularName: "song";
+    pluralName: "songs";
+    displayName: "Song";
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    name: Schema.Attribute.String;
+    src: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::song.song"> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface PluginUploadFile extends Struct.CollectionTypeSchema {
   collectionName: "files";
   info: {
@@ -899,6 +925,7 @@ declare module "@strapi/strapi" {
   export module Public {
     export interface ContentTypeSchemas {
       "api::playlist.playlist": ApiPlaylistPlaylist;
+      "api::song.song": ApiSongSong;
       "plugin::upload.file": PluginUploadFile;
       "plugin::upload.folder": PluginUploadFolder;
       "plugin::i18n.locale": PluginI18NLocale;
