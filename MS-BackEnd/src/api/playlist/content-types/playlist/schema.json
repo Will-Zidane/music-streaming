@@ -29,6 +29,12 @@
       ],
       "type": "media",
       "multiple": false
+    },
+    "songs": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::song.song",
+      "mappedBy": "playlists"
     }
   }
 }
