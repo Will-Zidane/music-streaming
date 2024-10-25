@@ -1,66 +1,47 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Layout from "@/layout/Layout";
-import Library from "@/components/Library/Library";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import SongPlayer from "@/components/SongPlayer/SongPlayer";
 import Playlist from "@/components/Playlist/Playlist";
+import { useMusicContext } from '@/components/MusicProvider/MusicProvider';
+import { data } from "autoprefixer";
 
 const Home = () => {
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const playlistData = [
-    {
-      title: "Houdini",
-      artist: "Eminem",
-      album: "The Death of Slim Shady",
-      url: "audio/y2meta.com - Eminem - Houdini [Official Music Video] (128 kbps).mp3",
-      coverArt: 'image/tdoss.jpeg'
-    },
-    {
-      title: "See You Again",
-      artist: "Charlie Puth ft. Wiz Khalifa",
-      album: "Furious 7 Soundtrack",
-      url: "audio/y2meta.com - Wiz Khalifa - See You Again ft. Charlie Puth [Official Video] Furious 7 Soundtrack (128 kbps).mp3",
-      coverArt: 'image/see-you-again.jpeg'
-    },
-    // Add more tracks as needed
-  ];
-  // Assume the height of your SongPlayer. Adjust this value as needed.
-  const playerHeight = 80; // in pixels
-  const handleTrackChange = (index) => {
-    setCurrentTrackIndex(index);
-  };
+  const { playlistData, currentTrackIndex, handleTrackChange } = useMusicContext();
+  const [songs, setSongs] = useState([]);
+
+  useEffect(() => {
+    const fetchSongs = async () => {
+      try {
+        const response = await fetch('http://localhost:1337/api/songs?populate=*');
+        const data = await response.json();
+        setSongs(data.data);
+      } catch (error) {
+        console.error('Error fetching songs:', error);
+      }
+    };
+
+    fetchSongs();
+  }, []);
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className="flex-grow overflow-hidden">
-        <Layout>
-          <PanelGroup direction="horizontal" className="h-full">
-            <Panel defaultSize={20} minSize={6}>
-              <div className="h-full bg-gray-100 overflow-y-auto rounded-md">
-                <Library />
-              </div>
-            </Panel>
-
-            <PanelResizeHandle className="w-1 active:bg-white hover:bg-gray-600 transition-colors" />
-
-            <Panel minSize={30} className="bg-gray-100 rounded-md">
-              <Playlist
-                playlist={playlistData}
-                currentTrackIndex={currentTrackIndex}
-                onTrackSelect={handleTrackChange}
-              />
-            </Panel>
-          </PanelGroup>
-        </Layout>
+    <Layout>
+      <div className="p-4">
+        <h1 className="text-2xl font-bold mb-4">Danh sách bài hát</h1>
+        {songs.map((song) => (
+          <div key={song.id} className="mb-4 p-4 border rounded">
+            <h2 className="font-bold">{song.attributes.title}</h2>
+            <p>Album: {song.attributes.album.data.attributes.name}</p>
+            <p>Ca sĩ: {song.attributes.authors.data[0].attributes.name}</p>
+          </div>
+        ))}
       </div>
-      <div style={{ height: `${playerHeight}px` }} className="flex-shrink-0">
-        <SongPlayer
+      <div className="h-full">
+        <Playlist
           playlist={playlistData}
           currentTrackIndex={currentTrackIndex}
-          onTrackChange={handleTrackChange}
+          onTrackSelect={handleTrackChange}
         />
       </div>
-    </div>
+    </Layout>
   );
 };
 
