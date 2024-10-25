@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Clock } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Clock } from "lucide-react";
 
 const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 };
 
 const Playlist = ({ playlist, currentTrackIndex, onTrackSelect }) => {
@@ -20,11 +20,11 @@ const Playlist = ({ playlist, currentTrackIndex, onTrackSelect }) => {
 
         try {
           await new Promise((resolve, reject) => {
-            audio.addEventListener('loadedmetadata', () => {
+            audio.addEventListener("loadedmetadata", () => {
               durations[i] = audio.duration;
               resolve();
             });
-            audio.addEventListener('error', reject);
+            audio.addEventListener("error", reject);
           });
         } catch (error) {
           console.error(`Error loading duration for track ${i}:`, error);
@@ -41,20 +41,12 @@ const Playlist = ({ playlist, currentTrackIndex, onTrackSelect }) => {
   return (
     <div className="h-full overflow-y-auto">
       <div className="bg-gray-900  p-4">
-        <div className="grid grid-cols-[auto,3fr,2fr,1fr,auto] gap-4 items-center text-sm  px-4 border-b border-gray-800 pb-2">
-          <div>#</div>
-          <div className={"ml-3"}>Title</div>
-          <div>Album</div>
-          <div>Date added</div>
-          <Clock size={16} />
-        </div>
-
         <div className="mt-2">
           {playlist.map((track, index) => (
             <div
               key={index}
               className={`grid grid-cols-[auto,3fr,2fr,1fr,auto] gap-4 items-center p-4 hover:bg-gray-300 rounded-md group cursor-pointer  active::text-green-100 ${
-                currentTrackIndex === index ? 'bg-gray-800/50' : ''
+                currentTrackIndex === index ? "bg-gray-800/50" : ""
               }`}
               onClick={() => onTrackSelect(index)}
             >
@@ -73,9 +65,10 @@ const Playlist = ({ playlist, currentTrackIndex, onTrackSelect }) => {
               </div>
 
               <div className="text-gray-400">{track.album}</div>
-              <div className="text-gray-400">15 hours ago</div>
               <div className="text-gray-400">
-                {trackDurations[index] ? formatDuration(trackDurations[index]) : '--:--'}
+                {trackDurations[index]
+                  ? formatDuration(trackDurations[index])
+                  : "--:--"}
               </div>
             </div>
           ))}
