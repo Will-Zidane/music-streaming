@@ -11,18 +11,17 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
   const soundRef = useRef(null);
 
   useEffect(() => {
-    // Only load track if audio context is started
-    if (audioContextStarted) {
+    // Only load track if audio context is started and playlist is available
+    if (audioContextStarted && playlist && playlist.length > 0) {
       loadTrack(currentTrackIndex);
     }
-  }, [currentTrackIndex, audioContextStarted]);
+  }, [currentTrackIndex, audioContextStarted, playlist]);
 
+  // Initialize audio context if suspended
   const initializeAudioContext = () => {
-    // Initialize Howler.js audio context
     if (Howler.ctx && Howler.ctx.state === "suspended") {
       Howler.ctx.resume().then(() => {
         setAudioContextStarted(true);
-        // Load and play the track after context is initialized
         loadTrack(currentTrackIndex);
       });
     } else {
@@ -32,6 +31,10 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
   };
 
   const loadTrack = (index) => {
+    if (!playlist || playlist.length === 0 || !playlist[index]) {
+      return; // Prevent loading if the playlist is empty or the track is invalid
+    }
+
     if (soundRef.current) {
       soundRef.current.unload();
     }
@@ -75,15 +78,14 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
 
     if (soundRef.current) {
       if (isPlaying) {
-        soundRef.current.pause();
+        soundRef.current.pause(); // Pause if it's playing
       } else {
-        soundRef.current.play();
+        soundRef.current.play(); // Play if it's paused
       }
-      setIsPlaying(!isPlaying);
+      setIsPlaying(!isPlaying); // Toggle playing state
     }
   };
 
-  // Rest of the component remains the same
   const handlePrevious = () => {
     onTrackChange(currentTrackIndex > 0 ? currentTrackIndex - 1 : playlist.length - 1);
   };
@@ -125,23 +127,47 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
     return () => clearInterval(timer);
   }, [isPlaying]);
 
+  // Handle edge cases if playlist or currentTrackIndex is undefined
+  const currentTrack = playlist && playlist[currentTrackIndex];
+
+  // Handle spacebar press to toggle play/pause
+  const handleKeyPress = (event) => {
+    if (event.key === " " || event.keyCode === 32) { // Spacebar key
+      event.preventDefault(); // Prevent default action (scrolling)
+      togglePlayPause(); // Toggle play/pause on spacebar press
+    }
+  };
+
+  useEffect(() => {
+    // Listen for the spacebar key press
+    window.addEventListener("keydown", handleKeyPress);
+
+    // Clean up the event listener when the component unmounts
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [isPlaying]); // Add dependency on `isPlaying` to ensure the key event is always registered properly
+
   return (
     <div className="flex flex-col w-full">
-
       <div className="flex items-center justify-between w-full px-4 py-2 bg-gray-900 text-white">
         {/* Left section - Album info */}
         <div className="flex items-center space-x-4 w-[240px]">
-          <img
-            src={playlist[currentTrackIndex].coverArt}
-            alt="Album cover"
-            className="w-14 h-14 rounded"
-          />
+          {currentTrack && currentTrack.coverArt ? (
+            <img
+              src={currentTrack.coverArt}
+              alt="Album cover"
+              className="w-14 h-14 rounded"
+            />
+          ) : (
+            <div className="w-14 h-14 bg-gray-500 rounded"></div> // Fallback if no cover art
+          )}
           <div>
             <h2 className="text-sm font-sans">
-              {playlist[currentTrackIndex].title}
+              {currentTrack ? currentTrack.title : "Loading..."}
             </h2>
             <p className="text-xs text-gray-200">
-              {playlist[currentTrackIndex].artist}
+              {currentTrack ? currentTrack.artist : "Unknown Artist"}
             </p>
           </div>
         </div>
