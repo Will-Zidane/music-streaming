@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@shadcn/ui": "^0.0.4",
     "autoprefixer": "^10.4.20",
     "howler": "^2.2.4",
     "lucide-react": "^0.453.0",

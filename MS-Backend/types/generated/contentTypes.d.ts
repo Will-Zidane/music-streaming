@@ -927,8 +927,8 @@ export interface ApiSongSong extends Schema.CollectionType {
     draftAndPublish: true;
   };
   attributes: {
-    title: Attribute.String;
-    src: Attribute.String;
+    name: Attribute.String;
+    src: Attribute.Media<"images" | "files" | "videos" | "audios">;
     album: Attribute.Relation<
       "api::song.song",
       "manyToOne",
@@ -944,6 +944,7 @@ export interface ApiSongSong extends Schema.CollectionType {
       "manyToMany",
       "api::playlist.playlist"
     >;
+    coverArt: Attribute.Media<"images" | "files" | "videos" | "audios">;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
