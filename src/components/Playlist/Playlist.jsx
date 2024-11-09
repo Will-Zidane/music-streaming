@@ -11,27 +11,22 @@ const formatDuration = (seconds) => {
 const getFullUrl = (relativePath, STRAPI_BASE_URL) => {
   if (!relativePath) return "/default-cover.jpg";
   if (relativePath.startsWith("http")) return relativePath;
-  if (relativePath.startsWith("/uploads")) {
-    const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
-    const baseUrl = STRAPI_BASE_URL.endsWith('/')
-      ? STRAPI_BASE_URL.slice(0, -1)
-      : STRAPI_BASE_URL;
-    return `${baseUrl}/${cleanPath}`;
-  }
-  return relativePath;
+  const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+  const baseUrl = STRAPI_BASE_URL.endsWith('/')
+    ? STRAPI_BASE_URL.slice(0, -1)
+    : STRAPI_BASE_URL;
+  return `${baseUrl}/${cleanPath}`;
 };
 
 const transformTrackData = (track, STRAPI_BASE_URL) => {
   if (!track) return null;
-
-  const coverArtUrl = track.attributes?.coverArt?.data?.attributes?.url;
 
   return {
     id: track.id,
     title: track.attributes?.name || "Untitled Track",
     artist: track.attributes?.authors?.data[0]?.attributes?.name || "Unknown Artist",
     album: track.attributes?.album?.data?.attributes?.name || "No Album",
-    coverArt: getFullUrl(coverArtUrl, STRAPI_BASE_URL),
+    coverArt: getFullUrl(track.attributes?.coverArt?.data?.attributes?.url, STRAPI_BASE_URL),
     url: getFullUrl(track.attributes?.src?.data?.attributes?.url, STRAPI_BASE_URL)
   };
 };
@@ -42,6 +37,7 @@ const Playlist = ({ playlist = [], currentTrackIndex, onTrackSelect, STRAPI_BASE
   const [transformedPlaylist, setTransformedPlaylist] = useState([]);
 
   useEffect(() => {
+    // Transform the playlist data
     const transformed = playlist.map(track => transformTrackData(track, STRAPI_BASE_URL));
     setTransformedPlaylist(transformed);
   }, [playlist, STRAPI_BASE_URL]);
@@ -145,7 +141,6 @@ const Playlist = ({ playlist = [], currentTrackIndex, onTrackSelect, STRAPI_BASE
                       onError={(e) => {
                         e.target.src = "/default-cover.jpg";
                       }}
-                      unoptimized
                     />
                   </div>
                   <div className="flex flex-col">
