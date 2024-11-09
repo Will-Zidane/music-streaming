@@ -2,40 +2,60 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Clock } from "lucide-react";
 
-// Lấy URL Strapi từ biến môi trường
-const getFullUrl = (relativePath, STRAPI_BASE_URL) => {
-  if (!relativePath) return "/default-cover.jpg";  // Default nếu không có đường dẫn
-  if (relativePath.startsWith("http")) return relativePath;  // Trường hợp đường dẫn đầy đủ đã có sẵn
-  return `${STRAPI_BASE_URL}${relativePath}`;  // Dùng STRAPI_BASE_URL từ prop truyền vào
-};
-
 const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 };
 
-const Playlist = ({ playlist, currentTrackIndex, onTrackSelect, STRAPI_BASE_URL }) => {
+const getFullUrl = (relativePath, STRAPI_BASE_URL) => {
+  if (!relativePath) return "/default-cover.jpg";
+  if (relativePath.startsWith("http")) return relativePath;
+  const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+  const baseUrl = STRAPI_BASE_URL.endsWith('/')
+    ? STRAPI_BASE_URL.slice(0, -1)
+    : STRAPI_BASE_URL;
+  return `${baseUrl}/${cleanPath}`;
+};
+
+const transformTrackData = (track, STRAPI_BASE_URL) => {
+  if (!track) return null;
+
+  return {
+    id: track.id,
+    title: track.attributes?.name || "Untitled Track",
+    artist: track.attributes?.authors?.data[0]?.attributes?.name || "Unknown Artist",
+    album: track.attributes?.album?.data?.attributes?.name || "No Album",
+    coverArt: getFullUrl(track.attributes?.coverArt?.data?.attributes?.url, STRAPI_BASE_URL),
+    url: getFullUrl(track.attributes?.src?.data?.attributes?.url, STRAPI_BASE_URL)
+  };
+};
+
+const Playlist = ({ playlist = [], currentTrackIndex, onTrackSelect, STRAPI_BASE_URL }) => {
   const [trackStates, setTrackStates] = useState({});
   const [loadingTracks, setLoadingTracks] = useState(true);
+  const [transformedPlaylist, setTransformedPlaylist] = useState([]);
+
+  useEffect(() => {
+    // Transform the playlist data
+    const transformed = playlist.map(track => transformTrackData(track, STRAPI_BASE_URL));
+    setTransformedPlaylist(transformed);
+  }, [playlist, STRAPI_BASE_URL]);
 
   useEffect(() => {
     const loadTrackDurations = async () => {
       setLoadingTracks(true);
       const states = {};
 
-      // Loop qua playlist và fetch các thông tin duration
-      for (let i = 0; i < playlist.length; i++) {
-        const track = playlist[i];
-        const audioUrl = track?.attributes?.src?.data?.attributes?.url;
-
-        if (!audioUrl) {
+      for (let i = 0; i < transformedPlaylist.length; i++) {
+        const track = transformedPlaylist[i];
+        if (!track?.url) {
           states[i] = { duration: 0, error: "Missing audio source" };
           continue;
         }
 
         try {
-          const audio = new Audio(getFullUrl(audioUrl, STRAPI_BASE_URL));
+          const audio = new Audio(track.url);
           await new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
               reject(new Error("Loading timeout"));
@@ -69,7 +89,7 @@ const Playlist = ({ playlist, currentTrackIndex, onTrackSelect, STRAPI_BASE_URL 
       setLoadingTracks(false);
     };
 
-    if (playlist.length > 0) {
+    if (transformedPlaylist.length > 0) {
       loadTrackDurations();
     }
 
@@ -77,9 +97,9 @@ const Playlist = ({ playlist, currentTrackIndex, onTrackSelect, STRAPI_BASE_URL 
       setTrackStates({});
       setLoadingTracks(false);
     };
-  }, [playlist, STRAPI_BASE_URL]);
+  }, [transformedPlaylist]);
 
-  if (playlist.length === 0) {
+  if (transformedPlaylist.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-gray-400">
@@ -90,17 +110,16 @@ const Playlist = ({ playlist, currentTrackIndex, onTrackSelect, STRAPI_BASE_URL 
   }
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="bg-gray-900 p-4">
+    <div className="h-full overflow-y-auto bg-gray-900 border-none">
+      <div className="p-4">
         {loadingTracks && (
           <div className="text-gray-400 text-sm mb-4">
             Loading track information...
           </div>
         )}
-        <div className="mt-2 space-y-1">
-          {playlist.map((track, index) => {
+        <div className="space-y-1">
+          {transformedPlaylist.map((track, index) => {
             const trackState = trackStates[index] || { duration: 0, error: null };
-            const coverArtUrl = track?.attributes?.coverArt?.data?.attributes?.url;
 
             return (
               <div
@@ -115,27 +134,31 @@ const Playlist = ({ playlist, currentTrackIndex, onTrackSelect, STRAPI_BASE_URL 
                 <div className="flex items-center gap-3">
                   <div className="relative w-14 h-14">
                     <Image
-                      src={getFullUrl(coverArtUrl, STRAPI_BASE_URL)}
-                      alt={track?.attributes?.name || "Track cover"}
+                      src={track.coverArt}
+                      alt={track.title}
                       fill
                       className="rounded object-cover"
+                      onError={(e) => {
+                        e.target.src = "/default-cover.jpg";
+                      }}
                     />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-white font-normal">
-                      {track?.attributes?.name || "Untitled Track"}
+                      {track.title}
                     </span>
                     <span className="text-sm text-gray-400">
-                      {track?.attributes?.authors?.data[0]?.attributes?.name || "Unknown Artist"}
+                      {track.artist}
                     </span>
                   </div>
                 </div>
 
                 <div className="text-gray-400">
-                  {track?.attributes?.album?.data?.attributes?.name || "No Album"}
+                  {track.album}
                 </div>
 
-                <div className="text-gray-400">
+                <div className="text-gray-400 flex items-center gap-2">
+                  <Clock size={14} />
                   {trackState.error ? (
                     <span className="text-red-400 text-sm" title={trackState.error}>
                       Error
