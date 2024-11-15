@@ -4,16 +4,14 @@ import Navbar from "@/layout/Header/Navbar";
 import Library from "@/components/Library/Library";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import SongPlayer from "@/components/SongPlayer/SongPlayer";
-import { useMusicContext } from '@/components/MusicProvider/MusicProvider';
 
 export default function Layout({ children, title, desc }) {
-  const { playlistData, currentTrackIndex, handleTrackChange } = useMusicContext();
   const playerHeight = 80;
 
   return (
     <div className="flex flex-col min-h-screen">
       <Head>
-        <title>{title ? `Music Streaming | ${title}` : "Music Streaming"}</title>
+        <title>{title ? ` ${title}` : "Music Streaming"}</title>
         {desc && <meta name="description" content={desc} />}
       </Head>
 
@@ -42,9 +40,7 @@ export default function Layout({ children, title, desc }) {
         className="fixed bottom-0 left-0 right-0 bg-white"
       >
         <SongPlayer
-          playlist={playlistData}
-          currentTrackIndex={currentTrackIndex}
-          onTrackChange={handleTrackChange}
+
         />
       </div>
     </div>
