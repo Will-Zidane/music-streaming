@@ -1,71 +1,64 @@
-import React, { useEffect, useState } from "react";
-import Layout from "@/layout/Layout";
+import React, { useEffect } from "react";
 import Playlist from "@/components/Playlist/Playlist";
 import { useMusicContext } from "@/components/MusicProvider/MusicProvider";
 
-// Lấy URL Strapi từ biến môi trường
-const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
-
 const Home = () => {
-  const { currentTrackIndex, handleTrackChange } = useMusicContext();
-  const [songs, setSongs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const {
+    currentTrackIndex,
+    originalData,
+    handleTrackChange,
+    isLoading,
+    error,
+    resetToAllSongs,
+    activePlaylist
+  } = useMusicContext();
 
+  const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
+
+  // Reset to all songs when Home component mounts
   useEffect(() => {
-    const fetchSongs = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${STRAPI_BASE_URL}/api/songs?populate=*`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch songs');
-        }
-        const data = await response.json();
-        setSongs(data.data);  // Set data vào state
-      } catch (error) {
-        console.error('Error fetching songs:', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Only reset if we're coming from a playlist (activePlaylist exists)
+    if (activePlaylist) {
+      resetToAllSongs();
+    }
+  }, []); // Empty dependency array means this runs once when component mounts
 
-    fetchSongs();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <Layout>
-        <div className="h-full flex items-center justify-center">
-          <div className="text-gray-400">Loading songs...</div>
-        </div>
-      </Layout>
+      <div className="h-full flex items-center justify-center">
+        <div className="text-gray-400">Loading songs...</div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Layout>
-        <div className="h-full flex items-center justify-center">
-          <div className="text-red-400">Error: {error}</div>
-        </div>
-      </Layout>
+      <div className="h-full flex items-center justify-center">
+        <div className="text-red-400">Error: {error}</div>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div className="h-full">
-        {/* Truyền STRAPI_BASE_URL xuống Playlist */}
-        <Playlist
-          playlist={songs}
-          currentTrackIndex={currentTrackIndex}
-          onTrackSelect={handleTrackChange}
-          STRAPI_BASE_URL={STRAPI_BASE_URL}
-        />
-      </div>
-    </Layout>
+    <div className="h-full">
+      <Playlist
+        playlist={originalData}
+        currentTrackIndex={currentTrackIndex}
+        onTrackSelect={handleTrackChange}
+        STRAPI_BASE_URL={STRAPI_BASE_URL}
+      />
+    </div>
   );
 };
+
+// Add metadata for the page
+export async function getStaticProps() {
+  return {
+    props: {
+      title: 'Home',
+      description: 'Browse and play your favorite music'
+    }
+  };
+}
 
 export default Home;

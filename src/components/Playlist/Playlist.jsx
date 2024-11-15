@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Clock } from "lucide-react";
 
+
+
 // Lấy URL Strapi từ biến môi trường
 const getFullUrl = (relativePath, STRAPI_BASE_URL) => {
   if (!relativePath) return "/default-cover.jpg";  // Default nếu không có đường dẫn

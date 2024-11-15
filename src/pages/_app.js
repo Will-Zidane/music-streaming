@@ -1,10 +1,18 @@
-import "@/styles/globals.css";
-import { MusicProvider } from "@/components/MusicProvider/MusicProvider";
+import Layout from '@/layout/Layout';
+import { MusicProvider } from '@/components/MusicProvider/MusicProvider';
+import '@/styles/globals.css';
 
-export default function App({ Component, pageProps }) {
+function MyApp({ Component, pageProps }) {
   return (
     <MusicProvider>
-      <Component {...pageProps} />
+      <Layout
+        title={pageProps.title}
+        desc={pageProps.description}
+      >
+        <Component {...pageProps} />
+      </Layout>
     </MusicProvider>
   );
 }
+
+export default MyApp;

@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Howl } from "howler";
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, Maximize2 } from "lucide-react";
+import { useMusicContext } from "@/components/MusicProvider/MusicProvider";
 
-const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
+const SongPlayer = () => {
+  // Get values from MusicContext instead of props
+  const {
+    playlistData,
+    currentTrackIndex,
+    handleTrackChange,
+    activePlaylist
+  } = useMusicContext();
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -10,14 +19,15 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
   const [audioContextStarted, setAudioContextStarted] = useState(false);
   const soundRef = useRef(null);
 
+  // Use activePlaylist if available, otherwise use playlistData
+  const currentPlaylist = activePlaylist || playlistData;
+
   useEffect(() => {
-    // Only load track if audio context is started and playlist is available
-    if (audioContextStarted && playlist && playlist.length > 0) {
+    if (audioContextStarted && currentPlaylist && currentPlaylist.length > 0) {
       loadTrack(currentTrackIndex);
     }
-  }, [currentTrackIndex, audioContextStarted, playlist]);
+  }, [currentTrackIndex, audioContextStarted, currentPlaylist]);
 
-  // Initialize audio context if suspended
   const initializeAudioContext = () => {
     if (Howler.ctx && Howler.ctx.state === "suspended") {
       Howler.ctx.resume().then(() => {
@@ -31,8 +41,8 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
   };
 
   const loadTrack = (index) => {
-    if (!playlist || playlist.length === 0 || !playlist[index]) {
-      return; // Prevent loading if the playlist is empty or the track is invalid
+    if (!currentPlaylist || currentPlaylist.length === 0 || !currentPlaylist[index]) {
+      return;
     }
 
     if (soundRef.current) {
@@ -40,9 +50,9 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
     }
 
     const sound = new Howl({
-      src: [playlist[index].url],
+      src: [currentPlaylist[index].url],
       volume: volume / 100,
-      html5: true, // This can help with some browser autoplay policies
+      html5: true,
       onload: () => {
         setDuration(sound.duration());
         if (audioContextStarted) {
@@ -59,12 +69,6 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
       onend: () => {
         handleNext();
       },
-      onseek: () => {
-        setElapsedTime(sound.seek());
-      },
-      onloaderror: (id, error) => {
-        console.error("Error loading audio:", error);
-      },
     });
 
     soundRef.current = sound;
@@ -78,20 +82,24 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
 
     if (soundRef.current) {
       if (isPlaying) {
-        soundRef.current.pause(); // Pause if it's playing
+        soundRef.current.pause();
       } else {
-        soundRef.current.play(); // Play if it's paused
+        soundRef.current.play();
       }
-      setIsPlaying(!isPlaying); // Toggle playing state
+      setIsPlaying(!isPlaying);
     }
   };
 
   const handlePrevious = () => {
-    onTrackChange(currentTrackIndex > 0 ? currentTrackIndex - 1 : playlist.length - 1);
+    handleTrackChange(
+      currentTrackIndex > 0 ? currentTrackIndex - 1 : currentPlaylist.length - 1
+    );
   };
 
   const handleNext = () => {
-    onTrackChange(currentTrackIndex < playlist.length - 1 ? currentTrackIndex + 1 : 0);
+    handleTrackChange(
+      currentTrackIndex < currentPlaylist.length - 1 ? currentTrackIndex + 1 : 0
+    );
   };
 
   const handleSeekChange = (e) => {
@@ -127,26 +135,28 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
     return () => clearInterval(timer);
   }, [isPlaying]);
 
-  // Handle edge cases if playlist or currentTrackIndex is undefined
-  const currentTrack = playlist && playlist[currentTrackIndex];
-
-  // Handle spacebar press to toggle play/pause
-  const handleKeyPress = (event) => {
-    if (event.key === " " || event.keyCode === 32) { // Spacebar key
-      event.preventDefault(); // Prevent default action (scrolling)
-      togglePlayPause(); // Toggle play/pause on spacebar press
-    }
-  };
+  // Get current track from the active playlist
+  const currentTrack = currentPlaylist && currentPlaylist[currentTrackIndex];
 
   useEffect(() => {
-    // Listen for the spacebar key press
-    window.addEventListener("keydown", handleKeyPress);
+    const handleKeyPress = (event) => {
+      const activeElement = document.activeElement;
+      const isSearchBarFocused = (
+        activeElement.tagName === 'INPUT' &&
+        (activeElement.type === 'text' || activeElement.type === 'search')
+      );
 
-    // Clean up the event listener when the component unmounts
+      if ((event.key === " " || event.keyCode === 32) && !isSearchBarFocused) {
+        event.preventDefault();
+        togglePlayPause();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [isPlaying]); // Add dependency on `isPlaying` to ensure the key event is always registered properly
+  }, [isPlaying]);
 
   return (
     <div className="flex flex-col w-full">
@@ -160,7 +170,7 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
               className="w-14 h-14 rounded"
             />
           ) : (
-            <div className="w-14 h-14 bg-gray-500 rounded"></div> // Fallback if no cover art
+            <div className="w-14 h-14 bg-gray-500 rounded"></div>
           )}
           <div>
             <h2 className="text-sm font-sans">
