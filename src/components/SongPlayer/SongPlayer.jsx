@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Howl } from "howler";
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, Maximize2 } from "lucide-react";
-import { useMusicContext } from "@/components/MusicProvider/MusicProvider";
+import { useMusicContext } from "@/utils/MusicProvider";
 
 const SongPlayer = () => {
-  // Get values from MusicContext instead of props
   const {
     playlistData,
     currentTrackIndex,
@@ -17,9 +16,9 @@ const SongPlayer = () => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(50);
   const [audioContextStarted, setAudioContextStarted] = useState(false);
+  const [isRepeatEnabled, setIsRepeatEnabled] = useState(false);
   const soundRef = useRef(null);
 
-  // Use activePlaylist if available, otherwise use playlistData
   const currentPlaylist = activePlaylist || playlistData;
 
   useEffect(() => {
@@ -67,11 +66,31 @@ const SongPlayer = () => {
         setIsPlaying(false);
       },
       onend: () => {
-        handleNext();
+        handleTrackEnd();
       },
     });
 
     soundRef.current = sound;
+  };
+
+  const handleTrackEnd = () => {
+    const isLastTrack = currentTrackIndex === currentPlaylist.length - 1;
+
+    if (isLastTrack) {
+      if (isRepeatEnabled) {
+        // If repeat is enabled, go back to the first track
+        handleTrackChange(0);
+      } else {
+        // If repeat is disabled, stop playback
+        setIsPlaying(false);
+        if (soundRef.current) {
+          soundRef.current.stop();
+        }
+      }
+    } else {
+      // If it's not the last track, play the next track
+      handleNext();
+    }
   };
 
   const togglePlayPause = () => {
@@ -100,6 +119,10 @@ const SongPlayer = () => {
     handleTrackChange(
       currentTrackIndex < currentPlaylist.length - 1 ? currentTrackIndex + 1 : 0
     );
+  };
+
+  const toggleRepeat = () => {
+    setIsRepeatEnabled(!isRepeatEnabled);
   };
 
   const handleSeekChange = (e) => {
@@ -161,7 +184,7 @@ const SongPlayer = () => {
   return (
     <div className="flex flex-col w-full">
       <div className="flex items-center justify-between w-full px-4 py-2 bg-gray-900 text-white">
-        {/* Left section - Album info */}
+        {/* Left section remains the same */}
         <div className="flex items-center space-x-4 w-[240px]">
           {currentTrack && currentTrack.coverArt ? (
             <img
@@ -182,7 +205,7 @@ const SongPlayer = () => {
           </div>
         </div>
 
-        {/* Center section - Controls and seekbar */}
+        {/* Center section - Updated with repeat button styling */}
         <div className="flex-1 flex flex-col items-center max-w-[600px]">
           <div className="flex items-center space-x-4 mb-1">
             <button className="text-gray-400 hover:text-white">
@@ -200,7 +223,10 @@ const SongPlayer = () => {
             <button onClick={handleNext} className="text-gray-400 hover:text-white">
               <SkipForward size={24} />
             </button>
-            <button className="text-gray-400 hover:text-white">
+            <button
+              onClick={toggleRepeat}
+              className={`${isRepeatEnabled ? 'text-white' : 'text-gray-400'} hover:text-white`}
+            >
               <Repeat size={20} />
             </button>
           </div>
@@ -218,7 +244,7 @@ const SongPlayer = () => {
           </div>
         </div>
 
-        {/* Right section - Volume controls */}
+        {/* Right section remains the same */}
         <div className="flex items-center space-x-4 w-[240px] justify-end">
           <button className="text-gray-400 hover:text-white">
             <Volume2 size={20} />
@@ -241,3 +267,4 @@ const SongPlayer = () => {
 };
 
 export default SongPlayer;
+

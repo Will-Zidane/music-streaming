@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Playlist from '@/components/Playlist/Playlist';
-import { useMusicContext } from '@/components/MusicProvider/MusicProvider';
+import { useMusicContext } from '@/utils/MusicProvider';
 
 const PlaylistPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const [playlist, setPlaylist] = useState([]);
-  const { currentTrackIndex, setCurrentPlaylist, handleTrackChange } = useMusicContext();
+  const { currentTrackIndex, handleTrackChange } = useMusicContext();
   const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
 
   useEffect(() => {
@@ -26,7 +26,6 @@ const PlaylistPage = () => {
 
         if (data.data) {
           const selectedPlaylist = data.data;
-
           const formattedTracks = selectedPlaylist.attributes.songs.data.map(song => ({
             id: song.id,
             attributes: {
@@ -51,7 +50,6 @@ const PlaylistPage = () => {
           }));
 
           setPlaylist(formattedTracks);
-          setCurrentPlaylist(formattedTracks);
         }
       } catch (error) {
         if (isMounted) {
@@ -65,10 +63,10 @@ const PlaylistPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [id]); // Remove setCurrentPlaylist from dependencies
+  }, [id]);
 
   const handleTrackSelect = (index) => {
-    handleTrackChange(index);
+    handleTrackChange(index, playlist);
   };
 
   return (
@@ -82,14 +80,5 @@ const PlaylistPage = () => {
     </div>
   );
 };
-
-export async function getServerSideProps() {
-  return {
-    props: {
-      title: 'Playlist',
-      description: 'View playlist details'
-    }
-  };
-}
 
 export default PlaylistPage;

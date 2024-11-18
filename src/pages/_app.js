@@ -1,5 +1,5 @@
 import Layout from '@/layout/Layout';
-import { MusicProvider } from '@/components/MusicProvider/MusicProvider';
+import { MusicProvider } from '@/utils/MusicProvider';
 import '@/styles/globals.css';
 
 function MyApp({ Component, pageProps }) {
