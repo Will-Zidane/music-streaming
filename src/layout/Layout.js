@@ -62,9 +62,9 @@ export default function Layout({ children, title, desc }) {
         {isAuthenticated ? (
           <SongPlayer />
         ) : (
-          <div className="h-full bg-gradient-to-r from-purple-600 to-blue-500">
+          <div className="h-full bg-gray-100 from-purple-600 to-blue-500">
             <div className="h-full flex items-center justify-between px-4">
-              <div className="text-white">
+              <div className="text-white ">
                 <h3 className="font-bold">Preview of Music Streaming</h3>
                 <p className="text-sm">Sign up to get unlimited songs and podcasts with occasional ads. No credit card needed.</p>
               </div>

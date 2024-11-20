@@ -23,7 +23,7 @@ const Navbar = () => {
     try {
       await logout();
       setIsDropdownOpen(false);
-      router.push('/login');
+      router.push('/');
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -41,14 +41,14 @@ const Navbar = () => {
           </div>
 
           {/* Center section with home and search */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center  gap-8">
             <Link href="/" className="text-white hover:text-neutral-400">
               <Home size={24} />
             </Link>
 
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-neutral-400" />
+                <Search className="h-4 w-4 text-neutral-400 " />
               </div>
 
               <input
@@ -56,7 +56,7 @@ const Navbar = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="What do you want to play?"
-                className="w-full py-2 pl-12 pr-4 bg-transparent text-white placeholder-neutral-400 focus:outline-none rounded-full text-sm"
+                className="w-[250px] py-2 pl-12 pr-4 bg-gray-600 text-white placeholder-neutral-400 focus:outline-none rounded-full text-sm"
               />
             </div>
           </div>
