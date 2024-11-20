@@ -11,7 +11,13 @@ const Navbar = () => {
   const { logout, user } = useAuth();
   const router = useRouter();
 
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  const toggleDropdown = () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    setIsDropdownOpen(!isDropdownOpen);
+  };
 
   const handleLogout = async () => {
     try {
@@ -29,7 +35,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Left section */}
           <div className="flex items-center">
-            <div className="text-white"> {/* Wrapper div instead of Link */}
+            <div className="text-white">
               <MyIcon />
             </div>
           </div>
@@ -61,7 +67,9 @@ const Navbar = () => {
               Install App
             </button>
 
-            <Bell className="h-6 w-6 text-white hover:text-neutral-400 cursor-pointer" />
+            {user && (
+              <Bell className="h-6 w-6 text-white hover:text-neutral-400 cursor-pointer" />
+            )}
 
             {/* Profile Picture with Dropdown */}
             <div className="relative">
@@ -72,12 +80,12 @@ const Navbar = () => {
                 <User className="h-6 w-6" />
               </button>
 
-              {/* Dropdown Menu */}
-              {isDropdownOpen && (
+              {/* Dropdown Menu - Only show when user is logged in and dropdown is open */}
+              {user && isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-neutral-900 rounded-md shadow-lg border border-neutral-800">
                   <div className="py-2">
                     <div className="px-4 py-2 text-sm text-neutral-400 border-b border-neutral-800">
-                      {user?.username || 'Account'}
+                      {user.username}
                     </div>
 
                     <Link

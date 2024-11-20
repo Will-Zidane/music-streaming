@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, ArrowRight, X, Check } from 'lucide-react';
 import { useRouter } from "next/router";
+import { useAuth } from "@/utils/AuthContext";
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
 
 const Library = () => {
-  const [playlists, setPlaylists] = useState([]);
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();  const [playlists, setPlaylists] = useState([]);
   const [songs, setSongs] = useState([]);
   const [filteredSongs, setFilteredSongs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,6 +17,8 @@ const Library = () => {
   const [selectedSongs, setSelectedSongs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
+
+
 
   const handlePlaylistClick = (playlistId) => {
     router.push(`/playlist/${playlistId}`).then();
