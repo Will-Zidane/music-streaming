@@ -4,7 +4,8 @@
   "info": {
     "singularName": "playlist",
     "pluralName": "playlists",
-    "displayName": "Playlist"
+    "displayName": "Playlist",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true
@@ -21,20 +22,27 @@
       "type": "string"
     },
     "coverArt": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
       "allowedTypes": [
         "images",
         "files",
         "videos",
         "audios"
-      ],
-      "type": "media",
-      "multiple": false
+      ]
     },
     "songs": {
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::song.song",
       "mappedBy": "playlists"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "playlists"
     }
   }
 }
