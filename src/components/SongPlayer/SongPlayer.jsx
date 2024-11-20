@@ -1,28 +1,36 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Howl } from "howler";
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, Maximize2 } from "lucide-react";
+import { useMusicContext } from "@/utils/MusicProvider";
 
-const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
+const SongPlayer = () => {
+  const {
+    playlistData,
+    currentTrackIndex,
+    handleTrackChange,
+    activePlaylist
+  } = useMusicContext();
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(50);
   const [audioContextStarted, setAudioContextStarted] = useState(false);
+  const [isRepeatEnabled, setIsRepeatEnabled] = useState(false);
   const soundRef = useRef(null);
 
+  const currentPlaylist = activePlaylist || playlistData;
+
   useEffect(() => {
-    // Only load track if audio context is started
-    if (audioContextStarted) {
+    if (audioContextStarted && currentPlaylist && currentPlaylist.length > 0) {
       loadTrack(currentTrackIndex);
     }
-  }, [currentTrackIndex, audioContextStarted]);
+  }, [currentTrackIndex, audioContextStarted, currentPlaylist]);
 
   const initializeAudioContext = () => {
-    // Initialize Howler.js audio context
     if (Howler.ctx && Howler.ctx.state === "suspended") {
       Howler.ctx.resume().then(() => {
         setAudioContextStarted(true);
-        // Load and play the track after context is initialized
         loadTrack(currentTrackIndex);
       });
     } else {
@@ -32,14 +40,18 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
   };
 
   const loadTrack = (index) => {
+    if (!currentPlaylist || currentPlaylist.length === 0 || !currentPlaylist[index]) {
+      return;
+    }
+
     if (soundRef.current) {
       soundRef.current.unload();
     }
 
     const sound = new Howl({
-      src: [playlist[index].url],
+      src: [currentPlaylist[index].url],
       volume: volume / 100,
-      html5: true, // This can help with some browser autoplay policies
+      html5: true,
       onload: () => {
         setDuration(sound.duration());
         if (audioContextStarted) {
@@ -54,17 +66,31 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
         setIsPlaying(false);
       },
       onend: () => {
-        handleNext();
-      },
-      onseek: () => {
-        setElapsedTime(sound.seek());
-      },
-      onloaderror: (id, error) => {
-        console.error("Error loading audio:", error);
+        handleTrackEnd();
       },
     });
 
     soundRef.current = sound;
+  };
+
+  const handleTrackEnd = () => {
+    const isLastTrack = currentTrackIndex === currentPlaylist.length - 1;
+
+    if (isLastTrack) {
+      if (isRepeatEnabled) {
+        // If repeat is enabled, go back to the first track
+        handleTrackChange(0);
+      } else {
+        // If repeat is disabled, stop playback
+        setIsPlaying(false);
+        if (soundRef.current) {
+          soundRef.current.stop();
+        }
+      }
+    } else {
+      // If it's not the last track, play the next track
+      handleNext();
+    }
   };
 
   const togglePlayPause = () => {
@@ -83,13 +109,20 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
     }
   };
 
-  // Rest of the component remains the same
   const handlePrevious = () => {
-    onTrackChange(currentTrackIndex > 0 ? currentTrackIndex - 1 : playlist.length - 1);
+    handleTrackChange(
+      currentTrackIndex > 0 ? currentTrackIndex - 1 : currentPlaylist.length - 1
+    );
   };
 
   const handleNext = () => {
-    onTrackChange(currentTrackIndex < playlist.length - 1 ? currentTrackIndex + 1 : 0);
+    handleTrackChange(
+      currentTrackIndex < currentPlaylist.length - 1 ? currentTrackIndex + 1 : 0
+    );
+  };
+
+  const toggleRepeat = () => {
+    setIsRepeatEnabled(!isRepeatEnabled);
   };
 
   const handleSeekChange = (e) => {
@@ -125,28 +158,54 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
     return () => clearInterval(timer);
   }, [isPlaying]);
 
+  // Get current track from the active playlist
+  const currentTrack = currentPlaylist && currentPlaylist[currentTrackIndex];
+
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      const activeElement = document.activeElement;
+      const isSearchBarFocused = (
+        activeElement.tagName === 'INPUT' &&
+        (activeElement.type === 'text' || activeElement.type === 'search')
+      );
+
+      if ((event.key === " " || event.keyCode === 32) && !isSearchBarFocused) {
+        event.preventDefault();
+        togglePlayPause();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [isPlaying]);
+
   return (
     <div className="flex flex-col w-full">
-
       <div className="flex items-center justify-between w-full px-4 py-2 bg-gray-900 text-white">
-        {/* Left section - Album info */}
+        {/* Left section remains the same */}
         <div className="flex items-center space-x-4 w-[240px]">
-          <img
-            src={playlist[currentTrackIndex].coverArt}
-            alt="Album cover"
-            className="w-14 h-14 rounded"
-          />
+          {currentTrack && currentTrack.coverArt ? (
+            <img
+              src={currentTrack.coverArt}
+              alt="Album cover"
+              className="w-14 h-14 rounded"
+            />
+          ) : (
+            <div className="w-14 h-14 bg-gray-500 rounded"></div>
+          )}
           <div>
             <h2 className="text-sm font-sans">
-              {playlist[currentTrackIndex].title}
+              {currentTrack ? currentTrack.title : "Loading..."}
             </h2>
             <p className="text-xs text-gray-200">
-              {playlist[currentTrackIndex].artist}
+              {currentTrack ? currentTrack.artist : "Unknown Artist"}
             </p>
           </div>
         </div>
 
-        {/* Center section - Controls and seekbar */}
+        {/* Center section - Updated with repeat button styling */}
         <div className="flex-1 flex flex-col items-center max-w-[600px]">
           <div className="flex items-center space-x-4 mb-1">
             <button className="text-gray-400 hover:text-white">
@@ -164,7 +223,10 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
             <button onClick={handleNext} className="text-gray-400 hover:text-white">
               <SkipForward size={24} />
             </button>
-            <button className="text-gray-400 hover:text-white">
+            <button
+              onClick={toggleRepeat}
+              className={`${isRepeatEnabled ? 'text-white' : 'text-gray-400'} hover:text-white`}
+            >
               <Repeat size={20} />
             </button>
           </div>
@@ -182,7 +244,7 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
           </div>
         </div>
 
-        {/* Right section - Volume controls */}
+        {/* Right section remains the same */}
         <div className="flex items-center space-x-4 w-[240px] justify-end">
           <button className="text-gray-400 hover:text-white">
             <Volume2 size={20} />
@@ -205,3 +267,4 @@ const SongPlayer = ({ playlist, currentTrackIndex, onTrackChange }) => {
 };
 
 export default SongPlayer;
+
