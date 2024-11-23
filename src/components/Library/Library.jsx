@@ -4,8 +4,11 @@ import { useRouter } from "next/router";
 import { useAuth } from "@/utils/AuthContext";
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
 
+
 const Library = () => {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();  const [playlists, setPlaylists] = useState([]);
+  const [playlists, setPlaylists] = useState([]);
+  const [playlistCounts, setPlaylistCounts] = useState({});
+
   const [songs, setSongs] = useState([]);
   const [filteredSongs, setFilteredSongs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,7 +19,10 @@ const Library = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedSongs, setSelectedSongs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+
 
 
 
@@ -26,13 +32,37 @@ const Library = () => {
 
   const fetchSongs = async () => {
     try {
-      const response = await fetch(`${STRAPI_BASE_URL}/api/songs?populate=*`);
+      const token = localStorage.getItem('strapiToken');
+
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(
+        `${STRAPI_BASE_URL}/api/songs?populate=*`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch songs');
+      }
+
       const data = await response.json();
       setSongs(data.data);
       setFilteredSongs(data.data);
+      setError(null); // Clear any existing errors if successful
     } catch (err) {
       console.error('Failed to fetch songs:', err);
-      setError('Failed to load songs');
+      setError(err.message);
+      setSongs([]);
+      setFilteredSongs([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -91,6 +121,7 @@ const Library = () => {
       if (!response.ok) throw new Error('Failed to create playlist');
 
       const data = await response.json();
+      console.log('Created playlist:', data);
       setPlaylists(prev => [...prev, data.data]);
 
       // Reset states
@@ -110,21 +141,138 @@ const Library = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchPlaylists = async () => {
-      try {
-        const response = await fetch(`${STRAPI_BASE_URL}/api/playlists?populate=*`);
-        const data = await response.json();
-        setPlaylists(data.data);
-        setIsLoading(false);
-      } catch (err) {
-        setError('Failed to load playlists');
-        setIsLoading(false);
-      }
-    };
 
-    fetchPlaylists();
-  }, []);
+
+  const fetchUserPlaylists = async () => {
+    const token = localStorage.getItem('strapiToken');
+
+    if (!token) {
+      console.error('No authentication token found.');
+      setError('Authentication required');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // First, get the user's data with their playlists
+      const userResponse = await fetch(
+        `${STRAPI_BASE_URL}/api/users/me?populate[playlists][populate][0]=songs&populate[playlists][populate][1]=coverArt`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userData = await userResponse.json();
+      console.log('User data with playlists:', userData);
+
+      // If the user has playlists, transform them into the expected format
+      if (userData.playlists) {
+        const formattedPlaylists = userData.playlists.map(playlist => ({
+          id: playlist.id,
+          attributes: {
+            title: playlist.title,
+            songs: {
+              data: playlist.songs ? playlist.songs.map(song => ({
+                id: song.id,
+                attributes: {
+                  name: song.name,
+                  authors: {
+                    data: song.authors || []
+                  },
+                  coverArt: song.coverArt ? {
+                    data: {
+                      attributes: {
+                        url: song.coverArt.url
+                      }
+                    }
+                  } : null
+                }
+              })) : []
+            },
+            coverArt: playlist.coverArt ? {
+              data: {
+                attributes: {
+                  url: playlist.coverArt.url
+                }
+              }
+            } : null
+          }
+        }));
+
+        setPlaylists(formattedPlaylists);
+      } else {
+        setPlaylists([]);
+      }
+    } catch (err) {
+      console.error('Playlist fetch error:', err);
+      setError('Failed to load playlists');
+      setPlaylists([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchPlaylistSongCounts = async () => {
+    try {
+      const token = localStorage.getItem('strapiToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(
+        `${STRAPI_BASE_URL}/api/songs?populate=playlists`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch songs');
+      }
+
+      const data = await response.json();
+
+      // Create a count object for each playlist
+      const counts = {};
+      data.data.forEach(song => {
+        song.attributes.playlists.data.forEach(playlist => {
+          if (!counts[playlist.id]) {
+            counts[playlist.id] = { count: 0 };
+          }
+          counts[playlist.id].count += 1;
+        });
+      });
+
+      setPlaylistCounts(counts);
+    } catch (err) {
+      console.error('Error fetching song counts:', err);
+      setError(err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchUserPlaylists();
+      fetchPlaylistSongCounts();
+      fetchSongs();
+    } else {
+      setPlaylists([]);
+      setSongs([]); // Clear songs when not authenticated
+      setFilteredSongs([]); // Clear filtered songs
+      setIsLoading(false);
+    }
+  }, [user, isAuthenticated]);
+
+
 
   if (isLoading) return (
     <div className="h-full bg-black text-white">
@@ -360,7 +508,7 @@ const Library = () => {
                   {playlist.attributes.title}
                 </div>
                 <div className="text-sm text-gray-400 truncate">
-                  Playlist • {playlist.attributes.songs?.data?.length || 0} songs
+                  Playlist • {playlistCounts[playlist.id]?.count || 0} songs
                 </div>
               </div>
             </div>
