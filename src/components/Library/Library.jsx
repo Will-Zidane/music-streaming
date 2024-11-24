@@ -105,24 +105,53 @@ const Library = () => {
 
     setIsCreating(true);
     try {
+      const token = localStorage.getItem('strapiToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Get current profile ID
+      const userResponse = await fetch(`${STRAPI_BASE_URL}/api/users/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to get profile information');
+      }
+
+      const userData = await userResponse.json();
+
+      // Create playlist with proper data structure
+      const playlistData = {
+        data: {
+          title: newPlaylistTitle.trim(),
+          songs: selectedSongs,
+          // Set profile ID directly in the structure
+          users_permissions_user: userData.id
+        }
+      };
+
+      console.log('Creating playlist with data:', playlistData); // Debug log
+
       const response = await fetch(`${STRAPI_BASE_URL}/api/playlists`, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          data: {
-            title: newPlaylistTitle.trim(),
-            songs: selectedSongs
-          }
-        })
+        body: JSON.stringify(playlistData)
       });
 
-      if (!response.ok) throw new Error('Failed to create playlist');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        throw new Error(errorData.error?.message || 'Failed to create playlist');
+      }
 
       const data = await response.json();
       console.log('Created playlist:', data);
-      setPlaylists(prev => [...prev, data.data]);
 
       // Reset states
       setShowSongSelector(false);
@@ -131,11 +160,14 @@ const Library = () => {
       setSearchQuery('');
       setFilteredSongs([]);
 
+      // Refresh playlists to get latest data
+      await fetchUserPlaylists();
+
       // Redirect to new playlist
       router.push(`/playlist/${data.data.id}`);
     } catch (err) {
       console.error('Failed to create playlist:', err);
-      setError('Failed to create playlist');
+      setError(err.message || 'Failed to create playlist');
     } finally {
       setIsCreating(false);
     }
@@ -154,7 +186,7 @@ const Library = () => {
     }
 
     try {
-      // First, get the user's data with their playlists
+      // First, get the profile's data with their playlists
       const userResponse = await fetch(
         `${STRAPI_BASE_URL}/api/users/me?populate[playlists][populate][0]=songs&populate[playlists][populate][1]=coverArt`,
         {
@@ -165,13 +197,12 @@ const Library = () => {
       );
 
       if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
+        throw new Error('Failed to fetch profile data');
       }
 
       const userData = await userResponse.json();
-      console.log('User data with playlists:', userData);
 
-      // If the user has playlists, transform them into the expected format
+      // If the profile has playlists, transform them into the expected format
       if (userData.playlists) {
         const formattedPlaylists = userData.playlists.map(playlist => ({
           id: playlist.id,
@@ -346,7 +377,6 @@ const Library = () => {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
           <div className="bg-neutral-900 p-6 rounded-lg w-full max-w-2xl max-h-[80vh] flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Add Songs to "{newPlaylistTitle}"</h2>
               <button
                 onClick={() => setShowSongSelector(false)}
                 className="hover:bg-neutral-800 p-1 rounded-full"
@@ -368,7 +398,6 @@ const Library = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-[300px]">
-              // Trong phần hiển thị song list
               {filteredSongs.map((song) => (
                 <div
                   key={song.id}
@@ -436,37 +465,34 @@ const Library = () => {
           </div>
           <div className="flex items-center space-x-2">
             <button
-              className="p-2 hover:bg-gray-800 rounded-full"
+              className="p-2 hover:bg-gray-200 rounded-full"
               onClick={() => setShowModal(true)}
             >
               <Plus size={20} />
             </button>
-            <button className="p-2 hover:bg-gray-800 rounded-full">
+            <button className="p-2 hover:bg-gray-200 rounded-full">
               <ArrowRight size={20} />
             </button>
           </div>
         </div>
 
         <div className="flex space-x-2">
-          <button className="px-4 py-1.5 bg-gray-800/40 hover:bg-gray-800 rounded-full text-sm font-medium">
+          <button className="px-4 py-1.5 bg-gray-500 hover:bg-gray-200 rounded-full text-sm font-medium">
             Playlists
           </button>
-          <button className="px-4 py-1.5 bg-gray-800/40 hover:bg-gray-800 rounded-full text-sm font-medium">
+          <button className="px-4 py-1.5 bg-gray-500 hover:bg-gray-200 rounded-full text-sm font-medium">
             Artists
           </button>
-          <button className="px-4 py-1.5 bg-gray-800/40 hover:bg-gray-800 rounded-full text-sm font-medium">
+          <button className="px-4 py-1.5 bg-gray-500 hover:bg-gray-200 rounded-full text-sm font-medium">
             Albums
           </button>
         </div>
 
         <div className="flex items-center justify-between">
-          <button className="p-2 hover:bg-gray-800 rounded-full">
+          <button className="p-2 hover:bg-gray-200 rounded-full">
             <Search size={20} />
           </button>
-          <button className="flex items-center space-x-2 text-sm text-gray-400 hover:text-white">
-            <span>Recents</span>
-            <span className="text-lg">☰</span>
-          </button>
+
         </div>
       </div>
 

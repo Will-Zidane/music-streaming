@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Home, Bell, Settings, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import Image from 'next/image';
 import MyIcon from "@/components/MyIcon/MyIcon";
 import { useAuth } from "@/utils/AuthContext";
 
@@ -10,13 +11,22 @@ const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { logout, user } = useAuth();
   const router = useRouter();
+  const dropdownRef = useRef(null); // Ref to the dropdown container
+
+  const getAvatarUrl = (avatarUrl) => {
+    if (!avatarUrl) return null;
+    if (avatarUrl.startsWith('http')) {
+      return avatarUrl;
+    }
+    return `${process.env.NEXT_PUBLIC_STRAPI_BASE_URL}${avatarUrl}`;
+  };
 
   const toggleDropdown = () => {
     if (!user) {
       router.push('/login');
       return;
     }
-    setIsDropdownOpen(!isDropdownOpen);
+    setIsDropdownOpen((prev) => !prev);
   };
 
   const handleLogout = async () => {
@@ -28,6 +38,26 @@ const Navbar = () => {
       console.error('Logout failed:', error);
     }
   };
+
+  // Effect to handle clicks outside the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Check if click was outside of the dropdown
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    // Attach event listener when dropdown is open
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Clean up the event listener on component unmount or when dropdown is closed
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   return (
     <nav className="fixed top-0 z-50 w-full bg-neutral-900 border-b border-neutral-800">
@@ -41,14 +71,14 @@ const Navbar = () => {
           </div>
 
           {/* Center section with home and search */}
-          <div className="flex items-center  gap-8">
+          <div className="flex items-center gap-8">
             <Link href="/" className="text-white hover:text-neutral-400">
               <Home size={24} />
             </Link>
 
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-neutral-400 " />
+                <Search className="h-4 w-4 text-neutral-400" />
               </div>
 
               <input
@@ -63,24 +93,36 @@ const Navbar = () => {
 
           {/* Right section */}
           <div className="flex items-center gap-4">
-            <button className="text-white text-sm hover:text-neutral-400">
-              Install App
-            </button>
+
 
             {user && (
               <Bell className="h-6 w-6 text-white hover:text-neutral-400 cursor-pointer" />
             )}
 
             {/* Profile Picture with Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 onClick={toggleDropdown}
                 className="flex items-center text-white hover:text-neutral-400"
               >
-                <User className="h-6 w-6" />
+                {user && user.avatar?.url ? (
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                    <Image
+                      src={getAvatarUrl(user.avatar.url)}
+                      alt={user.username}
+                      fill
+                      sizes="32px"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-neutral-700 flex items-center justify-center">
+                    <User className="h-5 w-5" />
+                  </div>
+                )}
               </button>
 
-              {/* Dropdown Menu - Only show when user is logged in and dropdown is open */}
+              {/* Dropdown Menu - Only show when profile is logged in and dropdown is open */}
               {user && isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-neutral-900 rounded-md shadow-lg border border-neutral-800">
                   <div className="py-2">

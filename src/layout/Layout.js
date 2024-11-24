@@ -12,9 +12,11 @@ export default function Layout({ children, title, desc }) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const isLoginPage = router.pathname === '/login';
+  const isProfilePage = router.pathname === '/profile';
+
 
   // If on login page, render a simplified layout
-  if (isLoginPage) {
+  if (isLoginPage || isProfilePage) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Head>
