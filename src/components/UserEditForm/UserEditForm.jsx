@@ -1,14 +1,22 @@
-import React, { useState, useEffect,useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/utils/AuthContext";
 import Image from "next/image";
+import { useRouter } from "next/router";
 import { uploadFile } from "@/utils/uploadUtils";
+import { Camera, Upload, Maximize2, X } from "lucide-react";
+
 
 const UserEditForm = ({ userId, onSuccess, isProfileEdit = false }) => {
+  const router = useRouter(); // Add router hook
   const { user, updateUser, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [uploadType, setUploadType] = useState("");
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -16,6 +24,25 @@ const UserEditForm = ({ userId, onSuccess, isProfileEdit = false }) => {
     avatar: null,
   });
   const [previewUrl, setPreviewUrl] = useState("");
+  const fileInputRef = useRef(null);
+  const menuRef = useRef(null);
+
+  // Add handler for cancel button
+  const handleCancel = () => {
+    router.back();
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Initialize form with user data
   useEffect(() => {
@@ -26,7 +53,6 @@ const UserEditForm = ({ userId, onSuccess, isProfileEdit = false }) => {
         password: "",
       });
 
-      // Improved avatar URL handling
       if (user.avatar?.url) {
         const avatarUrl = getFullAvatarUrl(user.avatar.url);
         setPreviewUrl(avatarUrl);
@@ -34,21 +60,12 @@ const UserEditForm = ({ userId, onSuccess, isProfileEdit = false }) => {
     }
   }, [user]);
 
-  // Helper function to get full avatar URL
   const getFullAvatarUrl = (url) => {
     if (!url) return "";
-
-    // Check if it's already a full URL
-    if (url.startsWith("http")) {
-      return url;
-    }
-
-    // Check if it's a relative URL starting with "/"
+    if (url.startsWith("http")) return url;
     if (url.startsWith("/")) {
       return `${process.env.NEXT_PUBLIC_STRAPI_BASE_URL}${url}`;
     }
-
-    // If it doesn't start with "/", add it
     return `${process.env.NEXT_PUBLIC_STRAPI_BASE_URL}/${url}`;
   };
 
@@ -60,12 +77,6 @@ const UserEditForm = ({ userId, onSuccess, isProfileEdit = false }) => {
     }));
     setError("");
     setSuccess("");
-  };
-
-  const fileInputRef = useRef(null);
-
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
   };
 
   const handleAvatarChange = (e) => {
@@ -87,7 +98,19 @@ const UserEditForm = ({ userId, onSuccess, isProfileEdit = false }) => {
         URL.revokeObjectURL(previewUrl);
       }
       setPreviewUrl(URL.createObjectURL(file));
+      setShowUploadModal(false);
     }
+  };
+
+  const handleUploadClick = (type) => {
+    setUploadType(type);
+    if (type === "device") {
+      fileInputRef.current?.click();
+    } else {
+      // Handle library upload - you'll need to implement this
+      console.log("Open media library");
+    }
+    setShowUploadModal(false);
   };
 
   const handleSubmit = async (e) => {
@@ -164,48 +187,95 @@ const UserEditForm = ({ userId, onSuccess, isProfileEdit = false }) => {
     return <div>Please log in to edit your profile.</div>;
   }
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto p-6">
-      {/* Error Alert */}
-      {error && (
-        <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg" role="alert">
-          {error}
-        </div>
-      )}
+  const Modal = ({ isOpen, onClose, children }) => {
+    if (!isOpen) return null;
 
-      {/* Success Alert */}
-      {success && (
-        <div className="p-4 mb-4 text-green-700 bg-green-100 rounded-lg" role="alert">
-          {success}
-        </div>
-      )}
-
-      {/* Avatar Upload */}
-      <div className="space-y-2">
-
-        <div className="mt-2 flex items-center justify-center">
-          <div
-            className="relative w-24 h-24 cursor-pointer transition-transform hover:scale-105"
-            onClick={handleAvatarClick}
-            role="button"
-            tabIndex={0}
-            aria-label="Click to change avatar"
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-gray-200 rounded-lg max-w-lg w-full relative">
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 text-gray-500 hover:text-white hover:bg-gray-500 rounded-lg"
           >
-            {previewUrl ? (
-              <Image
-                src={previewUrl}
-                alt="Avatar preview"
-                fill
-                sizes="96px"
-                className="rounded-full object-cover"
-                priority
-              />
-            ) : (
-              <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300">
-                <span className="text-gray-500">No image</span>
-              </div>
-            )}
+            <X className="h-6 w-6" />
+          </button>
+          {children}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto p-6">
+        {error && (
+          <div
+            className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg"
+            role="alert"
+          >
+            {error}
           </div>
+        )}
+
+        {success && (
+          <div
+            className="p-4 mb-4 text-green-700 bg-green-100 rounded-lg"
+            role="alert"
+          >
+            {success}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <div className="mt-2 flex items-center justify-center">
+            <div className="relative" ref={menuRef}>
+              <div
+                onClick={() => setShowMenu(!showMenu)}
+                className="relative w-24 h-24 cursor-pointer transition-transform hover:scale-105"
+              >
+                {previewUrl ? (
+                  <Image
+                    src={previewUrl}
+                    alt="Avatar preview"
+                    fill
+                    sizes="96px"
+                    className="rounded-full object-cover"
+                    priority
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300">
+                    <span className="text-gray-500">No image</span>
+                  </div>
+                )}
+              </div>
+
+              {showMenu && (
+                <div className="absolute mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                  <button
+                    onClick={() => {
+                      setShowImageModal(true);
+                      setShowMenu(false);
+                    }}
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
+                  >
+                    <Maximize2 className="mr-2 h-4 w-4" />
+                    View Image
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowUploadModal(true);
+                      setShowMenu(false);
+                    }}
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
+                  >
+                    <Camera className="mr-2 h-4 w-4" />
+                    Update Avatar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           <input
             ref={fileInputRef}
             type="file"
@@ -214,98 +284,169 @@ const UserEditForm = ({ userId, onSuccess, isProfileEdit = false }) => {
             className="hidden"
             aria-hidden="true"
           />
-        </div>
 
-        {/* Username Field */}
-      <div className="space-y-2">
-        <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-          Username
-        </label>
-        <input
-          id="username"
-          name="username"
-          value={formData.username}
-          onChange={handleInputChange}
-          minLength={3}
-          required
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 text-white bg-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-        <p className="text-sm text-gray-500">Minimum 3 characters</p>
-      </div>
-
-      {/* Email Field */}
-      <div className="space-y-2">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleInputChange}
-          required
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 text-white bg-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-      </div>
-
-      {/* Password Field */}
-      <div className="space-y-2">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          value={formData.password}
-          onChange={handleInputChange}
-          minLength={6}
-          placeholder="Leave blank to keep current password"
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 text-white bg-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        />
-        <p className="text-sm text-gray-500">Minimum 6 characters</p>
-      </div>
-
-
-        {/* Upload Progress */}
-        {uploadProgress > 0 && uploadProgress < 100 && (
-          <div className="mt-2">
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-                role="progressbar"
-                aria-valuenow={uploadProgress}
-                aria-valuemin={0}
-                aria-valuemax={100}
+          {/* Form fields */}
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Username
+              </label>
+              <input
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleInputChange}
+                minLength={3}
+                required
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 text-white bg-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            <p className="text-sm text-gray-500 mt-1">Uploading: {uploadProgress}%</p>
-          </div>
-        )}
-      </div>
 
-      {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-      >
-        {isLoading ? (
-          <span className="flex items-center justify-center">
-            <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            Updating...
-          </span>
-        ) : (
-          "Update Profile"
-        )}
-      </button>
-    </form>
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 text-white bg-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                minLength={6}
+                placeholder="Leave blank to keep current password"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 text-white bg-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {uploadProgress > 0 && uploadProgress < 100 && (
+            <div className="mt-2">
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                  role="progressbar"
+                  aria-valuenow={uploadProgress}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Uploading: {uploadProgress}%
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="flex-1 px-4 py-2 text-white bg-gray-500 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center ">
+                <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Updating...
+              </span>
+            ) : (
+              "Update Profile"
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="flex-1 px-4 py-2 text-gray-700 bg-gray-500 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+
+      {/* Image Preview Modal */}
+      <Modal isOpen={showImageModal} onClose={() => setShowImageModal(false)}>
+        <div className="p-6 ">
+          <div className="relative w-full h-96">
+            {previewUrl ? (
+              <Image
+                src={previewUrl}
+                alt="Avatar preview"
+                fill
+                className="object-contain"
+                priority
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-500">No image available</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Upload Options Modal */}
+      <Modal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)}>
+        <div className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Update Avatar</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => handleUploadClick("device")}
+              className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg hover:bg-gray-500"
+            >
+              <Upload className="h-8 w-8 mb-2" />
+              <span>Upload from Device</span>
+            </button>
+            <button
+              onClick={() => handleUploadClick("library")}
+              className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg hover:bg-gray-500"
+            >
+              <Camera className="h-8 w-8 mb-2" />
+              <span>Choose from Library</span>
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 };
 

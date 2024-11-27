@@ -60,7 +60,7 @@ const Navbar = () => {
   }, [isDropdownOpen]);
 
   return (
-    <nav className="fixed top-0 z-50 w-full bg-neutral-900 border-b border-neutral-800">
+    <nav className="fixed top-0 left-0 right-0 z-20 bg-gray-100 border-b border-gray-300">
       <div className="max-w-screen-xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Left section */}
@@ -72,38 +72,35 @@ const Navbar = () => {
 
           {/* Center section with home and search */}
           <div className="flex items-center gap-8">
-            <Link href="/" className="text-white hover:text-neutral-400">
-              <Home size={24} />
+            <Link href="/" className="text-white hover:text-gray-400">
+              <Home className="h-6 w-6" />
             </Link>
 
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-neutral-400" />
+                <Search className="h-4 w-4 text-gray-400" />
               </div>
-
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="What do you want to play?"
-                className="w-[250px] py-2 pl-12 pr-4 bg-gray-600 text-white placeholder-neutral-400 focus:outline-none rounded-full text-sm"
+                className="w-[250px] py-2 pl-12 pr-4 bg-gray-600 text-white placeholder-gray-400 focus:outline-none rounded-full text-sm"
               />
             </div>
           </div>
 
           {/* Right section */}
           <div className="flex items-center gap-4">
-
-
             {user && (
-              <Bell className="h-6 w-6 text-white hover:text-neutral-400 cursor-pointer" />
+              <Bell className="h-6 w-6 text-white hover:text-gray-400 cursor-pointer" />
             )}
 
             {/* Profile Picture with Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={toggleDropdown}
-                className="flex items-center text-white hover:text-neutral-400"
+                className="flex items-center text-white hover:text-gray-400"
               >
                 {user && user.avatar?.url ? (
                   <div className="relative w-8 h-8 rounded-full overflow-hidden">
@@ -116,41 +113,41 @@ const Navbar = () => {
                     />
                   </div>
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-neutral-700 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
                     <User className="h-5 w-5" />
                   </div>
                 )}
               </button>
 
-              {/* Dropdown Menu - Only show when profile is logged in and dropdown is open */}
+              {/* Dropdown Menu */}
               {user && isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-neutral-900 rounded-md shadow-lg border border-neutral-800">
+                <div className="absolute right-0 mt-2 w-48 bg-gray-900 rounded-md shadow-lg border border-gray-800">
                   <div className="py-2">
-                    <div className="px-4 py-2 text-sm text-neutral-400 border-b border-neutral-800">
+                    <div className="px-4 py-2 text-sm text-gray-400 border-b border-gray-800">
                       {user.username}
                     </div>
 
                     <Link
                       href="/profile"
-                      className="w-full px-4 py-2 flex items-center gap-3 text-sm text-white hover:bg-neutral-800"
+                      className="w-full px-4 py-2 flex items-center gap-3 text-sm text-white hover:bg-gray-800"
                     >
-                      <User size={16} />
+                      <User className="h-4 w-4" />
                       Profile
                     </Link>
 
                     <Link
-                      href="/settings"
-                      className="w-full px-4 py-2 flex items-center gap-3 text-sm text-white hover:bg-neutral-800"
+                      href="/account"
+                      className="w-full px-4 py-2 flex items-center gap-3 text-sm text-white hover:bg-gray-800"
                     >
-                      <Settings size={16} />
+                      <Settings className="h-4 w-4" />
                       Settings
                     </Link>
 
                     <button
                       onClick={handleLogout}
-                      className="w-full px-4 py-2 flex items-center gap-3 text-sm text-white hover:bg-neutral-800"
+                      className="w-full px-4 py-2 flex items-center gap-3 text-sm text-white hover:bg-gray-800"
                     >
-                      <LogOut size={16} />
+                      <LogOut className="h-4 w-4" />
                       Log out
                     </button>
                   </div>

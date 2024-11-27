@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@paypal/react-paypal-js": "^8.7.0",
     "@shadcn/ui": "^0.0.4",
     "@tanstack/react-table": "^8.20.5",
     "autoprefixer": "^10.4.20",

@@ -83,7 +83,7 @@ const Playlist = ({
                 key={index}
                 className={`grid grid-cols-[auto,3fr,2fr,1fr,auto] gap-4 items-center px-8 py-4
                   hover:bg-gray-800/60 rounded-none cursor-pointer transition-colors
-                  ${isCurrentlyPlaying ? "bg-gray-800/80" : currentTrackIndex === index ? "bg-gray-800/50" : ""}`}
+                  ${isCurrentlyPlaying ? "bg-gray-200" : currentTrackIndex === index ? "bg-gray-500" : ""}`}
                 onClick={() => onTrackSelect(index)}
               >
                 <div className="relative w-6 flex items-center justify-center">
