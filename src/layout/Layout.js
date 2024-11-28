@@ -9,7 +9,6 @@ import { useAuth } from "@/utils/AuthContext";
 
 export default function Layout({ children, title, desc }) {
   const playerHeight = 80;
-  const navbarHeight = 64; // Giả sử navbar cao 64px
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const isLoginPage = router.pathname === '/login';
@@ -30,22 +29,22 @@ export default function Layout({ children, title, desc }) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-black">
       <Head>
         <title>{title ? `${title}` : "Music Streaming"}</title>
         {desc && <meta name="description" content={desc} />}
       </Head>
-      <div className={`bg-gray-500`}>
+      <div className={`bg-black`}>
         <Navbar />
       </div>
 
       <div className="flex-1 mt-16 mb-20 overflow-auto bg-gray-100">
-        <PanelGroup direction="horizontal" className="h-full">
+        <PanelGroup direction="horizontal" className="h-full ">
           <Panel
             defaultSize={30}
             maxSize={70}
             minSize={6}
-            className="h-full bg-gray-100 overflow-y-auto rounded-md"
+            className="h-full bg-gray-100 overflow-y-auto "
           >
             <Library isReadOnly={!isAuthenticated} />
           </Panel>
@@ -64,7 +63,7 @@ export default function Layout({ children, title, desc }) {
       </div>
 
       <div
-        className="fixed bottom-0 left-0 right-0 z-20 bg-gray-100 border-t border-gray-300"
+        className="fixed bottom-0 left-0 right-0 z-20 bg-black-100 "
         style={{ height: `${playerHeight}px` }}
       >
         {isAuthenticated ? (

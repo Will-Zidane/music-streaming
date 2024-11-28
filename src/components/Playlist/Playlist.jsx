@@ -70,9 +70,9 @@ const Playlist = ({
   }
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="bg-gray-900">
-        <div className="space-y-1">
+    <div className="h-full overflow-y-auto min-h-[690px]">
+      <div className="bg-gray-900 ">
+        <div className="space-y-1 ">
           {playlist.map((track, index) => {
             const isCurrentlyPlaying = isTrackPlaying(track, index);
             const coverArtUrl = track?.attributes?.coverArt?.data?.attributes?.url;
@@ -82,7 +82,7 @@ const Playlist = ({
               <div
                 key={index}
                 className={`grid grid-cols-[auto,3fr,2fr,1fr,auto] gap-4 items-center px-8 py-4
-                  hover:bg-gray-800/60 rounded-none cursor-pointer transition-colors
+                  hover:bg-gray-500 rounded-none cursor-pointer transition-colors
                   ${isCurrentlyPlaying ? "bg-gray-200" : currentTrackIndex === index ? "bg-gray-500" : ""}`}
                 onClick={() => onTrackSelect(index)}
               >
@@ -92,7 +92,7 @@ const Playlist = ({
                   </span>
                   <span className="text-gray-400 hidden group-hover:block absolute">
                     {isCurrentlyPlaying ? (
-                      <PlayCircle className="w-5 h-5 text-green-500" />
+                      <PlayCircle className="w-5 h-5 text-gray-200" />
                     ) : (
                       <PlayCircle className="w-5 h-5" />
                     )}
