@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, ArrowRight, X, Check } from 'lucide-react';
+import { Search, Plus, X, Check, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/router";
 import { useAuth } from "@/utils/AuthContext";
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
@@ -20,7 +20,7 @@ const Library = () => {
   const [selectedSongs, setSelectedSongs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [libraryMode, setLibraryMode] = useState('playlists'); // 'playlists', 'create-playlist', 'add-songs'
-
+  const [initialSearch, setInitialSearch] = useState(true);
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
 
@@ -86,9 +86,12 @@ const Library = () => {
 
   const handleSearchSongs = (query) => {
     setSearchQuery(query);
+    setInitialSearch(false);
 
     if (query.trim() === '') {
       setFilteredSongs(songs);
+      setInitialSearch(true); // Reset to initial state if search is cleared
+
       return;
     }
 
@@ -311,7 +314,7 @@ const Library = () => {
       <div className="flex items-center justify-between">
         <button
           onClick={() => setLibraryMode('playlists')}
-          className="hover:bg-neutral-800 p-1 rounded-full"
+          className="hover:bg-gray-200 p-1 rounded-full"
         >
           <X size={20} />
         </button>
@@ -330,7 +333,7 @@ const Library = () => {
       <button
         onClick={handleCreatePlaylist}
         disabled={!newPlaylistTitle.trim()}
-        className="w-full px-4 py-2 rounded bg-green-500 text-black font-medium hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full px-4 py-2 rounded bg-gray-500 text-black font-medium hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Next
       </button>
@@ -343,7 +346,7 @@ const Library = () => {
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => setLibraryMode('create-playlist')}
+            onClick={() => setLibraryMode("create-playlist")}
             className="hover:bg-neutral-800 p-1 rounded-full"
           >
             <X size={20} />
@@ -353,7 +356,10 @@ const Library = () => {
 
         {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={20}
+          />
           <input
             type="text"
             value={searchQuery}
@@ -364,50 +370,59 @@ const Library = () => {
         </div>
       </div>
 
+      {/* Conditional Rendering of Songs */}
       <div className="flex-1 overflow-y-auto">
-        {filteredSongs.map((song) => (
-          <div
-            key={song.id}
-            onClick={() => handleSongSelection(song.id)}
-            className="flex items-center space-x-3 p-2 hover:bg-gray-800/40 rounded-md cursor-pointer"
+        <div className="p-4 border-t border-gray-800 flex justify-between items-center">
+          <div className="text-sm text-gray-400">
+            {selectedSongs.length} songs selected
+          </div>
+          <button
+            onClick={handleFinishPlaylistCreation}
+            disabled={selectedSongs.length === 0 || isCreating}
+            className="px-4 py-2 rounded bg-gray-500 text-black font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
-              {song.attributes.coverArt?.data ? (
-                <img
-                  src={`${STRAPI_BASE_URL}${song.attributes.coverArt.data.attributes.url}`}
-                  alt={song.attributes.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                  <span>🎵</span>
+            {isCreating ? "Creating..." : "Create Playlist"}
+          </button>
+        </div>
+        {searchQuery.trim() ? (
+          filteredSongs.map((song) => (
+            <div
+              key={song.id}
+              onClick={() => handleSongSelection(song.id)}
+              className="flex items-center space-x-3 p-2 hover:bg-gray-800/40 rounded-md cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+                {song.attributes.coverArt?.data ? (
+                  <img
+                    src={`${STRAPI_BASE_URL}${song.attributes.coverArt.data.attributes.url}`}
+                    alt={song.attributes.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                    <span>🎵</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="font-medium">{song.attributes.name}</div>
+                <div className="text-sm text-gray-400">
+                  {song.attributes.authors?.data[0]?.attributes.name ||
+                    "Unknown Artist"}
                 </div>
-              )}
-            </div>
-            <div className="flex-1">
-              <div className="font-medium">{song.attributes.name}</div>
-              <div className="text-sm text-gray-400">
-                {song.attributes.authors?.data[0]?.attributes.name || 'Unknown Artist'}
+              </div>
+              <div className="w-6 h-6 rounded-full border border-gray-600 flex items-center justify-center">
+                {selectedSongs.includes(song.id) && (
+                  <Check size={16} className="text-green-500" />
+                )}
               </div>
             </div>
-            <div className="w-6 h-6 rounded-full border border-gray-600 flex items-center justify-center">
-              {selectedSongs.includes(song.id) && <Check size={16} className="text-green-500" />}
-            </div>
+          ))
+        ) : (
+          <div className="text-gray-400 text-center mt-4">
+            Start typing to search for songs
           </div>
-        ))}
-      </div>
-
-      <div className="p-4 border-t border-gray-800 flex justify-between items-center">
-        <div className="text-sm text-gray-400">
-          {selectedSongs.length} songs selected
-        </div>
-        <button
-          onClick={handleFinishPlaylistCreation}
-          disabled={selectedSongs.length === 0 || isCreating}
-          className="px-4 py-2 rounded bg-green-500 text-black font-medium hover:bg-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isCreating ? "Creating..." : "Create Playlist"}
-        </button>
+        )}
       </div>
     </div>
   );
@@ -424,12 +439,12 @@ const Library = () => {
           <div className="flex items-center space-x-2">
             <button
               className="p-2 hover:bg-gray-300 rounded-full"
-              onClick={() => setLibraryMode('create-playlist')}
+              onClick={() => setLibraryMode("create-playlist")}
             >
               <Plus size={20} />
             </button>
             <button className="p-2 hover:bg-gray-300 rounded-full">
-              <ArrowRight size={20} />
+              <ArrowLeft size={20} />
             </button>
           </div>
         </div>
@@ -437,9 +452,11 @@ const Library = () => {
         <div className="flex space-x-2">
           <button
             className={`px-4 py-1.5 rounded-full bg-gray-500 hover:bg-gray-300 text-sm font-medium ${
-              libraryMode === 'playlists' ? 'bg-white text-black' : 'bg-gray-500 hover:bg-gray-200'
+              libraryMode === "playlists"
+                ? "bg-white text-black"
+                : "bg-gray-500 hover:bg-gray-200"
             }`}
-            onClick={() => setLibraryMode('playlists')}
+            onClick={() => setLibraryMode("playlists")}
           >
             Playlists
           </button>
@@ -458,7 +475,7 @@ const Library = () => {
             <div
               key={playlist.id}
               onClick={() => router.push(`/playlist/${playlist.id}`)}
-              className="flex items-center space-x-3 p-2 hover:bg-gray-800/40 rounded-md cursor-pointer"
+              className="flex items-center space-x-3 p-2 hover:bg-gray-300 rounded-md cursor-pointer"
             >
               <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
                 {playlist.attributes.title === "Liked Songs" ? (

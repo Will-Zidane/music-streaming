@@ -40,6 +40,16 @@
       "relation": "manyToMany",
       "target": "api::song.song",
       "mappedBy": "authors"
+    },
+    "avatar": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": false
     }
   }
 }

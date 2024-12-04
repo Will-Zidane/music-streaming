@@ -27,7 +27,7 @@ const SpotifyPremiumStudent = () => {
                 <p className="text-zinc-400 mt-2">
                   Hóa đơn tiếp theo của bạn có giá 29.500đ vào 26/11/24.
                 </p>
-                <p className="text-zinc-400 mt-2">Ví MoMo</p>
+                <p className="text-zinc-400 mt-2">Ví Paypal</p>
               </div>
               <div className="w-8 h-8">
                 <svg

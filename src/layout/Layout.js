@@ -27,63 +27,66 @@ export default function Layout({ children, title, desc }) {
       </div>
     );
   }
-
   return (
-    <div className="flex flex-col min-h-screen bg-black">
-      <Head>
-        <title>{title ? `${title}` : "Music Streaming"}</title>
-        {desc && <meta name="description" content={desc} />}
-      </Head>
-      <div className={`bg-black`}>
-        <Navbar />
-      </div>
+  <div className="flex flex-col min-h-screen bg-black">
+    <Head>
+      <title>{title ? `${title}` : "Music Streaming"}</title>
+      {desc && <meta name="description" content={desc} />}
+    </Head>
+    <Navbar />
 
-      <div className="flex-1 mt-16 mb-20 overflow-auto bg-gray-100">
-        <PanelGroup direction="horizontal" className="h-full ">
-          <Panel
-            defaultSize={30}
-            maxSize={70}
-            minSize={6}
-            className="h-full bg-gray-100 overflow-y-auto "
-          >
+    <div className="flex-1 mt-16 mb-20 bg-gray-100">
+      <PanelGroup direction="horizontal" className="h-full">
+        {/* Left Panel with Library */}
+        <Panel
+          defaultSize={30}
+          maxSize={70}
+          minSize={6}
+          className="bg-gray-100 h-full"
+        >
+          <div className="h-full ">
             <Library isReadOnly={!isAuthenticated} />
-          </Panel>
-
-          <PanelResizeHandle className="w-1 active:bg-white hover:bg-gray-200 bg-gray-600 transition-colors z-10" />
-
-          <Panel
-            minSize={30}
-            className="h-full bg-gray-100 rounded-md overflow-y-auto"
-          >
-            <div className={!isAuthenticated ? 'pointer-events-none' : ''}>
-              {children}
-            </div>
-          </Panel>
-        </PanelGroup>
-      </div>
-
-      <div
-        className="fixed bottom-0 left-0 right-0 z-20 bg-black-100 "
-        style={{ height: `${playerHeight}px` }}
-      >
-        {isAuthenticated ? (
-          <SongPlayer />
-        ) : (
-          <div className="h-full flex items-center justify-between px-4 bg-gradient-to-r from-purple-600 to-blue-500">
-            <div className="text-white">
-              <h3 className="font-bold">Preview of Music Streaming</h3>
-              <p className="text-sm">Sign up to get unlimited songs and podcasts with occasional ads. No credit card
-                needed.</p>
-            </div>
-            <button
-              onClick={() => router.push('/login')}
-              className="bg-white text-black px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform"
-            >
-              Sign up free
-            </button>
           </div>
-        )}
-      </div>
+        </Panel>
+
+        {/* Resize Handle */}
+        <PanelResizeHandle className="w-1 active:bg-white hover:bg-gray-200 bg-gray-600 transition-colors z-10" />
+
+        {/* Right Panel with Children */}
+        <Panel
+          minSize={30}
+          className="bg-gray-100 rounded-md h-full"
+        >
+          <div className={`h-full overflow-y-auto ${!isAuthenticated ? 'pointer-events-none' : ''}`}>
+            {children}
+          </div>
+        </Panel>
+      </PanelGroup>
     </div>
-      );
+
+    {/* Footer Player */}
+    <div
+      className="fixed bottom-0 left-0 right-0 z-20 bg-black-100"
+      style={{ height: `${playerHeight}px` }}
+    >
+      {isAuthenticated ? (
+        <SongPlayer />
+      ) : (
+        <div className="h-full flex items-center justify-between px-4 bg-gradient-to-r from-purple-600 to-blue-500">
+          <div className="text-white">
+            <h3 className="font-bold">Preview of Music Streaming</h3>
+            <p className="text-sm">Sign up to get unlimited songs and podcasts with occasional ads. No credit card needed.</p>
+          </div>
+          <button
+            onClick={() => router.push('/login')}
+            className="bg-white text-black px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform"
+          >
+            Sign up free
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+
+);
       }

@@ -121,15 +121,13 @@ const Navbar = () => {
 
               {/* Dropdown Menu */}
               {user && isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-gray-900 rounded-md shadow-lg border border-gray-800">
-                  <div className="py-2">
-                    <div className="px-4 py-2 text-sm text-gray-400 border-b border-gray-800">
-                      {user.username}
-                    </div>
+                <div className="absolute right-0 mt-2 w-48 bg-gray-100 rounded-md shadow-lg border border-gray-200">
+                  <div className="">
+
 
                     <Link
                       href="/profile"
-                      className="w-full px-4 py-2 flex items-center gap-3 text-sm text-white hover:bg-gray-800"
+                      className="w-full px-4 py-2 flex items-center rounded-md gap-3 text-sm text-white hover:bg-gray-300"
                     >
                       <User className="h-4 w-4" />
                       Profile
@@ -137,7 +135,7 @@ const Navbar = () => {
 
                     <Link
                       href="/account"
-                      className="w-full px-4 py-2 flex items-center gap-3 text-sm text-white hover:bg-gray-800"
+                      className="w-full px-4 py-2 flex items-center rounded-md gap-3 text-sm text-white hover:bg-gray-300"
                     >
                       <Settings className="h-4 w-4" />
                       Settings
@@ -145,7 +143,7 @@ const Navbar = () => {
 
                     <button
                       onClick={handleLogout}
-                      className="w-full px-4 py-2 flex items-center gap-3 text-sm text-white hover:bg-gray-800"
+                      className="w-full px-4 py-2 flex items-center rounded-md gap-3 text-sm text-white hover:bg-gray-300"
                     >
                       <LogOut className="h-4 w-4" />
                       Log out

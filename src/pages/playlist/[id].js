@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import Playlist from '@/components/Playlist/Playlist';
 import { useMusicContext } from '@/utils/MusicProvider';
+import Playlist from '@/components/Playlist/Playlist';
+import albums from "@/components/Albums/Albums";
 
 const PlaylistPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const [playlist, setPlaylist] = useState([]);
-  const { currentTrackIndex, handleTrackChange } = useMusicContext();
+  const [playlistTitle, setPlaylistTitle] = useState(''); // State for storing the playlist title
+
+  const {
+    currentTrackIndex,
+    handleTrackChange,
+    isPlaying,
+    activePlaylist: currentPlaylist, // Use the correct context value for the current playlist
+  } = useMusicContext();
   const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
 
   useEffect(() => {
@@ -25,6 +33,8 @@ const PlaylistPage = () => {
         if (!isMounted) return;
 
         if (data.data) {
+          const playlistTitle = data.data.attributes.title; // Extract the playlist title
+          setPlaylistTitle(playlistTitle); // Set the playlist title to state
           const selectedPlaylist = data.data;
           const formattedTracks = selectedPlaylist.attributes.songs.data.map(song => ({
             id: song.id,
@@ -34,6 +44,7 @@ const PlaylistPage = () => {
               src: song.attributes.src,
               album: {
                 data: {
+                  id: song.attributes.album?.data?.id || null,  // Ensure album id is set properly
                   attributes: {
                     name: song.attributes.album?.data?.attributes?.name || selectedPlaylist.attributes.title
                   }
@@ -48,6 +59,7 @@ const PlaylistPage = () => {
               }
             }
           }));
+
 
           setPlaylist(formattedTracks);
         }
@@ -76,6 +88,10 @@ const PlaylistPage = () => {
         currentTrackIndex={currentTrackIndex}
         onTrackSelect={handleTrackSelect}
         STRAPI_BASE_URL={STRAPI_BASE_URL}
+        isPlaying={isPlaying} // Pass the isPlaying value from context
+        currentPlayingPlaylist={currentPlaylist} // Pass the current playlist from context
+        playlistTitle={playlistTitle} // Pass the playlist title to the Playlist component
+
       />
     </div>
   );

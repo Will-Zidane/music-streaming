@@ -11,6 +11,7 @@ export function MusicProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPlayingTrack, setCurrentPlayingTrack] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     const fetchPlaylist = async () => {
@@ -41,9 +42,11 @@ export function MusicProvider({ children }) {
   const formatSongData = (songs) => {
     return songs.map(song => ({
       title: song.attributes.name,
-      artist: song.attributes.authors.data
-        .map(author => author.attributes.name)
-        .join(", "),
+      artist: song.attributes.authors?.data?.length > 0
+        ? song.attributes.authors.data
+          .map(author => author.attributes.name)
+          .join(", ")
+        : 'Unknown Artist',
       album: song.attributes.album?.data?.attributes?.name || "Unknown Album",
       url: `${STRAPI_BASE_URL}${song.attributes.src.data.attributes.url}`,
       coverArt: song.attributes.coverArt?.data?.attributes?.url
@@ -51,6 +54,7 @@ export function MusicProvider({ children }) {
         : "/default-cover.jpg"
     }));
   };
+
 
   const loadPlaylist = (playlist) => {
     const formattedPlaylist = playlist.map(song => {
@@ -71,15 +75,16 @@ export function MusicProvider({ children }) {
 
   const handleTrackChange = (index, playlist = null) => {
     if (playlist) {
-      // Nếu có playlist mới, cập nhật playlist và phát bài hát được chọn
+      // Update playlist and play the selected track
       loadPlaylist(playlist);
       setCurrentTrackIndex(index);
-      setCurrentPlayingTrack(formatSongData(playlist)[index]);
+      setCurrentPlayingTrack(playlist[index]);
     } else {
-      // Nếu không có playlist mới, chỉ thay đổi bài hát trong playlist hiện tại
+      // Change track in the current playlist
       setCurrentTrackIndex(index);
       setCurrentPlayingTrack(playlistData[index]);
     }
+    setIsPlaying(true); // Start playing when track is changed
   };
 
   const resetToAllSongs = () => {
@@ -100,7 +105,8 @@ export function MusicProvider({ children }) {
         loadPlaylist,
         resetToAllSongs,
         isLoading,
-        error
+        error,
+        isPlaying,
       }}
     >
       {children}

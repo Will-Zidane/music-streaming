@@ -4,7 +4,8 @@
   "info": {
     "singularName": "album",
     "pluralName": "albums",
-    "displayName": "Album"
+    "displayName": "Album",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true
@@ -30,6 +31,16 @@
       "relation": "oneToMany",
       "target": "api::song.song",
       "mappedBy": "album"
+    },
+    "coverArt": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": false
     }
   }
 }
