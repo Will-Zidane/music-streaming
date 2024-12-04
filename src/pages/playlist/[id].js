@@ -34,6 +34,7 @@ const PlaylistPage = () => {
 
         if (data.data) {
           const playlistTitle = data.data.attributes.title; // Extract the playlist title
+          const playlistId = data.data.id;
           setPlaylistTitle(playlistTitle); // Set the playlist title to state
           const selectedPlaylist = data.data;
           const formattedTracks = selectedPlaylist.attributes.songs.data.map(song => ({

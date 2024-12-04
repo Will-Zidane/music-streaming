@@ -106,6 +106,46 @@ const Playlist = ({
     0,
   );
 
+  const handleDeletePlaylist = async () => {
+    // Validate playlist ID exists
+    if (!playlistId) {
+      console.error("No playlist ID provided");
+      return;
+    }
+
+    try {
+      // Confirm deletion with user
+      const confirmDelete = window.confirm("Are you sure you want to delete this playlist? This action cannot be undone.");
+
+      if (!confirmDelete) return;
+
+      // Perform delete request
+      const response = await fetch(`/api/playlists/${playlistId}`, {
+        method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('strapiToken')}`, // Add auth token
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Redirect or update UI after successful deletion
+        router.push("/playlists"); // Redirect to playlists page
+
+        // Optional: Show a success toast/notification
+        alert("Playlist successfully deleted");
+      } else {
+        // Handle potential error responses
+        const errorData = await response.json();
+        console.error("Playlist deletion failed:", errorData);
+        alert(errorData.message || "Failed to delete the playlist. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error deleting playlist:", error);
+      alert("An unexpected error occurred. Please try again later.");
+    }
+  };
+
   return (
     <div className="h-full overflow-y-auto min-h-[690px]">
       {isAuthenticated && (
@@ -161,7 +201,7 @@ const Playlist = ({
               <button className="block px-4 py-2 text-sm text-gray-700 bg-gray-500 hover:bg-gray-200 w-full text-left ">
                 Edit Playlist
               </button>
-              <button className="block px-4 py-2 text-sm text-red-700 bg-gray-500 hover:bg-gray-200 w-full text-left">
+              <button className="block px-4 py-2 text-sm text-red-700 bg-gray-500 hover:bg-gray-200 w-full text-left" onClick={handleDeletePlaylist}>
                 Delete Playlist
               </button>
             </div>
