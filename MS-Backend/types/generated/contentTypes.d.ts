@@ -695,7 +695,6 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
   };
   options: {
     draftAndPublish: false;
-    timestamps: true;
   };
   attributes: {
     username: Attribute.String &
@@ -724,6 +723,12 @@ export interface PluginUsersPermissionsUser extends Schema.CollectionType {
       "manyToOne",
       "plugin::users-permissions.role"
     >;
+    playlists: Attribute.Relation<
+      "plugin::users-permissions.user",
+      "oneToMany",
+      "api::playlist.playlist"
+    >;
+    avatar: Attribute.Media<"images" | "files" | "videos" | "audios">;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -747,6 +752,7 @@ export interface ApiAlbumAlbum extends Schema.CollectionType {
     singularName: "album";
     pluralName: "albums";
     displayName: "Album";
+    description: "";
   };
   options: {
     draftAndPublish: true;
@@ -768,6 +774,7 @@ export interface ApiAlbumAlbum extends Schema.CollectionType {
       "oneToMany",
       "api::song.song"
     >;
+    coverArt: Attribute.Media<"images" | "files" | "videos" | "audios">;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -817,6 +824,7 @@ export interface ApiAuthorAuthor extends Schema.CollectionType {
       "manyToMany",
       "api::song.song"
     >;
+    avatar: Attribute.Media<"images" | "files" | "videos" | "audios">;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -883,6 +891,7 @@ export interface ApiPlaylistPlaylist extends Schema.CollectionType {
     singularName: "playlist";
     pluralName: "playlists";
     displayName: "Playlist";
+    description: "";
   };
   options: {
     draftAndPublish: true;
@@ -896,6 +905,11 @@ export interface ApiPlaylistPlaylist extends Schema.CollectionType {
       "api::playlist.playlist",
       "manyToMany",
       "api::song.song"
+    >;
+    users_permissions_user: Attribute.Relation<
+      "api::playlist.playlist",
+      "manyToOne",
+      "plugin::users-permissions.user"
     >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;

@@ -9,15 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@paypal/react-paypal-js": "^8.7.0",
     "@shadcn/ui": "^0.0.4",
+    "@tanstack/react-table": "^8.20.5",
     "autoprefixer": "^10.4.20",
+    "axios": "^1.7.7",
     "howler": "^2.2.4",
     "lucide-react": "^0.453.0",
-    "next": "14.2.7",
+    "next": "^15.0.3",
     "react": "^18",
     "react-dom": "^18",
     "react-h5-audio-player": "^3.9.3",
-    "react-resizable-panels": "^2.1.2"
+    "react-resizable-panels": "^2.1.2",
+    "react-sortable-hoc": "^2.0.0"
   },
   "devDependencies": {
     "postcss": "^8.4.41",

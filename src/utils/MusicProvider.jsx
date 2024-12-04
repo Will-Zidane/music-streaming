@@ -10,7 +10,8 @@ export function MusicProvider({ children }) {
   const [activePlaylist, setActivePlaylist] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [currentPlayingTrack, setCurrentPlayingTrack] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     const fetchPlaylist = async () => {
@@ -25,18 +26,7 @@ export function MusicProvider({ children }) {
         const data = await response.json();
         setOriginalData(data.data);
 
-        const formattedData = data.data.map(song => ({
-          title: song.attributes.name,
-          artist: song.attributes.authors.data
-            .map(author => author.attributes.name)
-            .join(", "),
-          album: song.attributes.album?.data?.attributes?.name || "Unknown Album",
-          url: `${STRAPI_BASE_URL}${song.attributes.src.data.attributes.url}`,
-          coverArt: song.attributes.coverArt?.data?.attributes?.url
-            ? `${STRAPI_BASE_URL}${song.attributes.coverArt.data.attributes.url}`
-            : "/default-cover.jpg"
-        }));
-
+        const formattedData = formatSongData(data.data);
         setPlaylistData(formattedData);
         setIsLoading(false);
       } catch (error) {
@@ -49,48 +39,58 @@ export function MusicProvider({ children }) {
     fetchPlaylist();
   }, []);
 
-  const setCurrentPlaylist = (playlist) => {
-    const formattedPlaylist = playlist.map(song => {
-      // Safeguard against undefined values
-      const songAttributes = song.attributes || {};
-
-      return {
-        title: songAttributes.name || 'Unknown Song', // Default value if name is missing
-        artist: songAttributes.authors?.data?.map(author => author.attributes.name).join(", ") || 'Unknown Artist', // Default value if no authors
-        album: songAttributes.album?.data?.attributes?.name || "Unknown Album", // Default if album is missing
-        url: `${STRAPI_BASE_URL}${songAttributes.src?.data?.attributes?.url || ''}`, // Safeguard against undefined src
-        coverArt: songAttributes.coverArt?.data?.attributes?.url
-          ? `${STRAPI_BASE_URL}${songAttributes.coverArt.data.attributes.url}`
-          : "/default-cover.jpg"
-      };
-    });
-
-    setPlaylistData(formattedPlaylist);
-    setActivePlaylist(formattedPlaylist);
-    setCurrentTrackIndex(0);
-  };
-
-
-  const handleTrackChange = (index) => {
-    setCurrentTrackIndex(index);
-  };
-
-  const resetToAllSongs = () => {
-    const formattedData = originalData.map(song => ({
+  const formatSongData = (songs) => {
+    return songs.map(song => ({
       title: song.attributes.name,
-      artist: song.attributes.authors.data
-        .map(author => author.attributes.name)
-        .join(", "),
+      artist: song.attributes.authors?.data?.length > 0
+        ? song.attributes.authors.data
+          .map(author => author.attributes.name)
+          .join(", ")
+        : 'Unknown Artist',
       album: song.attributes.album?.data?.attributes?.name || "Unknown Album",
       url: `${STRAPI_BASE_URL}${song.attributes.src.data.attributes.url}`,
       coverArt: song.attributes.coverArt?.data?.attributes?.url
         ? `${STRAPI_BASE_URL}${song.attributes.coverArt.data.attributes.url}`
         : "/default-cover.jpg"
     }));
+  };
 
+
+  const loadPlaylist = (playlist) => {
+    const formattedPlaylist = playlist.map(song => {
+      const songAttributes = song.attributes || {};
+      return {
+        title: songAttributes.name || 'Unknown Song',
+        artist: songAttributes.authors?.data?.map(author => author.attributes.name).join(", ") || 'Unknown Artist',
+        album: songAttributes.album?.data?.attributes?.name || "Unknown Album",
+        url: `${STRAPI_BASE_URL}${songAttributes.src?.data?.attributes?.url || ''}`,
+        coverArt: songAttributes.coverArt?.data?.attributes?.url
+          ? `${STRAPI_BASE_URL}${songAttributes.coverArt.data.attributes.url}`
+          : "/default-cover.jpg"
+      };
+    });
+    setPlaylistData(formattedPlaylist);
+    setActivePlaylist(formattedPlaylist);
+  };
+
+  const handleTrackChange = (index, playlist = null) => {
+    if (playlist) {
+      // Update playlist and play the selected track
+      loadPlaylist(playlist);
+      setCurrentTrackIndex(index);
+      setCurrentPlayingTrack(playlist[index]);
+    } else {
+      // Change track in the current playlist
+      setCurrentTrackIndex(index);
+      setCurrentPlayingTrack(playlistData[index]);
+    }
+    setIsPlaying(true); // Start playing when track is changed
+  };
+
+  const resetToAllSongs = () => {
+    const formattedData = formatSongData(originalData);
     setPlaylistData(formattedData);
     setActivePlaylist(null);
-    setCurrentTrackIndex(0);
   };
 
   return (
@@ -100,11 +100,13 @@ export function MusicProvider({ children }) {
         playlistData,
         originalData,
         activePlaylist,
+        currentPlayingTrack,
         handleTrackChange,
-        setCurrentPlaylist,
+        loadPlaylist,
         resetToAllSongs,
         isLoading,
-        error
+        error,
+        isPlaying,
       }}
     >
       {children}

@@ -1,70 +1,161 @@
-import React, { useState } from 'react';
-import { Search, Home, Bell } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Home, Bell, Settings, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
+import Image from 'next/image';
 import MyIcon from "@/components/MyIcon/MyIcon";
+import { useAuth } from "@/utils/AuthContext";
 
 const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { logout, user } = useAuth();
+  const router = useRouter();
+  const dropdownRef = useRef(null); // Ref to the dropdown container
+
+  const getAvatarUrl = (avatarUrl) => {
+    if (!avatarUrl) return null;
+    if (avatarUrl.startsWith('http')) {
+      return avatarUrl;
+    }
+    return `${process.env.NEXT_PUBLIC_STRAPI_BASE_URL}${avatarUrl}`;
+  };
+
+  const toggleDropdown = () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    setIsDropdownOpen((prev) => !prev);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsDropdownOpen(false);
+      router.push('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  // Effect to handle clicks outside the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Check if click was outside of the dropdown
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    // Attach event listener when dropdown is open
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Clean up the event listener on component unmount or when dropdown is closed
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   return (
-    <div className="w-full bg-black px-4 py-2">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        {/* Left section */}
-        <div className="flex items-center gap-4">
-          {/* Logo (you can replace this with your own logo component) */}
-          <div className="text-white">
-            <MyIcon/>
+    <nav className="fixed top-0 left-0 right-0 z-20 bg-black-100  ">
+      <div className="max-w-screen-xl mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Left section */}
+          <div className="flex items-center">
+            <div className="text-white">
+              <MyIcon />
+            </div>
           </div>
-        </div>
 
-        {/* Center section with home and search */}
-        <div className="flex items-center gap-2 flex-1 justify-center max-w-3xl">
-          {/* Home button */}
-          <Link href={'/'} className="p-2 bg-neutral-900 rounded-full hover:bg-neutral-800">
-            <Home className="text-white" size={20} />
-          </Link>
+          {/* Center section with home and search */}
+          <div className="flex items-center gap-8">
+            <Link href="/" className="text-white hover:text-gray-400">
+              <Home className="h-6 w-6" />
+            </Link>
 
-          {/* Search bar container */}
-          <div className="relative flex-1 max-w-xl">
-            <div className="relative flex items-center bg-neutral-900 rounded-full hover:bg-neutral-800">
-              {/* Search Icon */}
-              <Search className="absolute left-4 text-neutral-400" size={20} />
-
-              {/* Search Input */}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="What do you want to play?"
-                className="w-full py-2 pl-12 pr-4 bg-transparent text-white placeholder-neutral-400 focus:outline-none rounded-full text-sm"
+                className="w-[250px] py-2 pl-12 pr-4 bg-gray-600 text-white placeholder-gray-400 focus:outline-none rounded-full text-sm"
               />
             </div>
           </div>
-        </div>
 
-        {/* Right section */}
-        <div className="flex items-center gap-4">
-          {/* Install App Button */}
-          <button className="px-4 py-1 text-neutral-400 hover:text-white text-sm font-medium">
-            Install App
-          </button>
+          {/* Right section */}
+          <div className="flex items-center gap-4">
+            {user && (
+              <Bell className="h-6 w-6 text-white hover:text-gray-400 cursor-pointer" />
+            )}
 
-          {/* Notifications */}
-          <button className="p-2 hover:bg-neutral-800 rounded-full">
-            <Bell className="text-white" size={20} />
-          </button>
+            {/* Profile Picture with Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={toggleDropdown}
+                className="flex items-center text-white hover:text-gray-400"
+              >
+                {user && user.avatar?.url ? (
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                    <Image
+                      src={getAvatarUrl(user.avatar.url)}
+                      alt={user.username}
+                      fill
+                      sizes="32px"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                    <User className="h-5 w-5" />
+                  </div>
+                )}
+              </button>
 
-          {/* Profile Picture */}
-          <button className="w-8 h-8 rounded-full bg-neutral-800 overflow-hidden">
-            <img
-              src="/api/placeholder/32/32"
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          </button>
+              {/* Dropdown Menu */}
+              {user && isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-gray-100 rounded-md shadow-lg border border-gray-200">
+                  <div className="">
+
+
+                    <Link
+                      href="/profile"
+                      className="w-full px-4 py-2 flex items-center rounded-md gap-3 text-sm text-white hover:bg-gray-300"
+                    >
+                      <User className="h-4 w-4" />
+                      Profile
+                    </Link>
+
+                    <Link
+                      href="/account"
+                      className="w-full px-4 py-2 flex items-center rounded-md gap-3 text-sm text-white hover:bg-gray-300"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Settings
+                    </Link>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full px-4 py-2 flex items-center rounded-md gap-3 text-sm text-white hover:bg-gray-300"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Log out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
 

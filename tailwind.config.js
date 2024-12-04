@@ -20,7 +20,16 @@ module.exports = {
       "gray-100":"#121212",
       "gray-200":"#B3B3B3",
       "gray-300":"#535353",
-      "green-100":"#3BE477"
+      "gray-500":"#282828",
+      "gray-600":"#465A7E66",
+
+      // black
+
+      "black-100":"#000000",
+
+      // green
+      "green-100":"#3BE477",
+      "green-200":"#1DE760",
     },
   },
   plugins: []
