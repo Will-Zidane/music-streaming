@@ -30,6 +30,11 @@ module.exports = {
       // green
       "green-100":"#3BE477",
       "green-200":"#1DE760",
+      "green-300":"#00C000",
+
+      // red dark
+      "red-100":"#8b0000",
+      "red-200":"#dc143c",
     },
   },
   plugins: []
