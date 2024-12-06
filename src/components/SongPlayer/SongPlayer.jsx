@@ -238,7 +238,7 @@ const SongPlayer = () => {
               max={duration}
               value={elapsedTime}
               onChange={handleSeekChange}
-              className="flex-1 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer range-progress:bg-white"
+              className="flex-1 h-1 bg-gray-500 rounded-lg appearance-none cursor-pointer range-progress:bg-white"
             />
             <span className="text-xs w-12">{formatTime(duration)}</span>
           </div>
@@ -255,7 +255,7 @@ const SongPlayer = () => {
             max="100"
             value={volume}
             onChange={handleVolumeChange}
-            className="w-24 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+            className="w-24 h-1 bg-gray-500 rounded-lg appearance-none cursor-pointer"
           />
           <button className="text-gray-400 hover:text-white">
             <Maximize2 size={20} />
