@@ -25,8 +25,6 @@ const Library = () => {
   const { user, isAuthenticated } = useAuth();
 
 
-
-
   const handlePlaylistClick = (playlistId) => {
     router.push(`/playlist/${playlistId}`).then();
   };
