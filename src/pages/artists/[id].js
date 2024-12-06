@@ -43,6 +43,8 @@ const ArtistPage = () => {
     fetchArtistAndAlbums();
   }, [id]);
 
+
+
   if (!artist) return <div>Loading...</div>;
 
   return (
