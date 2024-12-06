@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { PlayCircle, Ellipsis, Trash2, Search, X, Check } from "lucide-react";
-import { useAuth } from "@/utils/AuthContext";
-import { useRouter } from "next/router";
-import Link from "next/link";
+import {  Search, X, Check } from "lucide-react";
+
 
 const AddSongsModal = ({
                          isOpen,
                          onClose,
                          STRAPI_BASE_URL,
                          playlistId,
-                         refreshPlaylist
+                         refreshPlaylist,
+                         currentPlaylistSongs
+
                        }) => {
   const [songs, setSongs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,8 +28,15 @@ const AddSongsModal = ({
         const data = await response.json();
 
         if (data.data) {
-          setSongs(data.data);
-          setFilteredSongs(data.data);
+          // Filter out songs already in the playlist
+          const availableSongs = data.data.filter(song =>
+            !currentPlaylistSongs.some(playlistSong =>
+              playlistSong.id === song.id
+            )
+          );
+
+          setSongs(availableSongs);
+          setFilteredSongs(availableSongs);
         }
       } catch (error) {
         console.error("Error fetching songs:", error);
@@ -39,7 +46,7 @@ const AddSongsModal = ({
     if (isOpen) {
       fetchSongs();
     }
-  }, [isOpen, STRAPI_BASE_URL]);
+  }, [isOpen, STRAPI_BASE_URL, currentPlaylistSongs]);
 
   // Search songs
   const handleSearchSongs = (query) => {
@@ -105,11 +112,12 @@ const AddSongsModal = ({
         await refreshPlaylist();
       }
 
+
+
       // Reset and close modal
       setSelectedSongs([]);
       setSearchQuery('');
       onClose();
-
       alert("Songs added to playlist successfully!");
     } catch (error) {
       console.error("Error adding songs:", error);
@@ -122,8 +130,8 @@ const AddSongsModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 w-[500px] h-[600px] rounded-lg flex flex-col">
+    <div className="fixed inset-0 bg-black-100 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-gray-500 w-[500px] h-[600px] rounded-lg flex flex-col">
         <div className="p-4 border-b border-gray-700 flex justify-between items-center">
           <button onClick={onClose} className="hover:bg-gray-700 p-1 rounded-full">
             <X size={20} className="text-white" />
@@ -150,41 +158,46 @@ const AddSongsModal = ({
 
         {/* Songs List */}
         <div className="flex-1 overflow-y-auto">
-          {filteredSongs.map((song) => (
-            <div
-              key={song.id}
-              onClick={() => handleSongSelection(song.id)}
-              className="flex items-center space-x-3 p-3 hover:bg-gray-700 cursor-pointer"
-            >
-              <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
-                {song.attributes.coverArt?.data ? (
-                  <Image
-                    src={`${STRAPI_BASE_URL}${song.attributes.coverArt.data.attributes.url}`}
-                    alt={song.attributes.name}
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-600 flex items-center justify-center">
-                    <span>🎵</span>
+          {searchQuery.trim() === '' ? (
+            <div className="text-gray-400 text-center mt-4">
+              Nhập từ khóa để tìm bài hát.
+            </div>
+          ) : (
+            filteredSongs.map((song) => (
+              <div
+                key={song.id}
+                onClick={() => handleSongSelection(song.id)}
+                className="flex items-center space-x-3 p-3 hover:bg-gray-700 cursor-pointer"
+              >
+                <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                  {song.attributes.coverArt?.data ? (
+                    <Image
+                      src={`${STRAPI_BASE_URL}${song.attributes.coverArt.data.attributes.url}`}
+                      alt={song.attributes.name}
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                      <span>🎵</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-white">{song.attributes.name}</div>
+                  <div className="text-sm text-gray-400">
+                    {song.attributes.authors?.data[0]?.attributes.name || "Unknown Artist"}
                   </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="font-medium text-white">{song.attributes.name}</div>
-                <div className="text-sm text-gray-400">
-                  {song.attributes.authors?.data[0]?.attributes.name ||
-                    "Unknown Artist"}
+                </div>
+                <div className="w-6 h-6 rounded-full border border-gray-600 flex items-center justify-center">
+                  {selectedSongs.includes(song.id) && (
+                    <Check size={16} className="text-green-500" />
+                  )}
                 </div>
               </div>
-              <div className="w-6 h-6 rounded-full border border-gray-600 flex items-center justify-center">
-                {selectedSongs.includes(song.id) && (
-                  <Check size={16} className="text-green-500" />
-                )}
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Bottom Action Bar */}
@@ -204,3 +217,5 @@ const AddSongsModal = ({
     </div>
   );
 };
+
+export default AddSongsModal;

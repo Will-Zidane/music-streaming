@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import Image from "next/image";
 import { PlayCircle, Ellipsis, Trash2 } from "lucide-react";
 import { useAuth } from "@/utils/AuthContext";
 import { useRouter } from "next/router";
 import Link from "next/link";
-
+import AddSongsModal from "@/components/AddSongModal/AddSongModal";
 export const getFullUrl = (relativePath, STRAPI_BASE_URL) => {
   if (!relativePath) return "/default-cover.jpg";
   if (relativePath.startsWith("http")) return relativePath;
@@ -28,11 +28,14 @@ const Playlist = ({
   playlistId,
   refreshPlaylist, // New prop to refresh playlist after edit
 }) => {
+
+
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
   const [trackDurations, setTrackDurations] = useState({});
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null); // Tham chiếu tới dropdown
   const [hoveredTrackIndex, setHoveredTrackIndex] = useState(null);
 
   // Edit playlist states
@@ -44,6 +47,28 @@ const Playlist = ({
     useState(false);
   const [deletionConfirmText, setDeletionConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // New state for track deletion
+  const [isDeletingTrack, setIsDeletingTrack] = useState(false);
+
+  const [isAddSongsModalOpen, setIsAddSongsModalOpen] = useState(false);
+
+  // Hàm xử lý click bên ngoài dropdown
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setShowDropdown(false); // Ẩn dropdown nếu click bên ngoài
+    }
+  };
+
+  useEffect(() => {
+    // Lắng nghe sự kiện `mousedown`
+    window.addEventListener("mousedown", handleClickOutside);
+
+    // Cleanup listener khi component unmount
+    return () => {
+      window.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
 
   // Load track durations
@@ -102,7 +127,6 @@ const Playlist = ({
       if (response.ok) {
         // Refresh playlist data
         if (refreshPlaylist) refreshPlaylist();
-        window.location.reload();
         setIsEditing(false);
 
         alert("Playlist updated successfully");
@@ -202,6 +226,46 @@ const Playlist = ({
     );
   }
 
+  const handleTrackDelete = async (trackId) => {
+    const confirmDelete = window.confirm("Are you sure you want to remove this track from the playlist?");
+    if (!confirmDelete) return;
+
+    try {
+      // Direct update of playlist tracks
+      const updateResponse = await fetch(
+        `${STRAPI_BASE_URL}/api/playlists/${playlistId}?populate=songs`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("strapiToken")}`,
+          },
+          body: JSON.stringify({
+            data: {
+              songs: {
+                disconnect: [{ id: trackId }]
+              }
+            }
+          })
+        }
+      );
+
+      if (!updateResponse.ok) {
+        throw new Error("Failed to remove track from playlist");
+      }
+
+      // Refresh playlist data
+      if (refreshPlaylist) {
+        await refreshPlaylist();
+      }
+      alert("Track removed successfully");
+    } catch (error) {
+      console.error("Error removing track:", error);
+      alert("Failed to remove track from playlist");
+    }
+  };
+
+
   return (
     <div className="h-full overflow-y-auto min-h-[690px]">
       {isAuthenticated && (
@@ -248,13 +312,13 @@ const Playlist = ({
                     placeholder={playlistTitle}
                   />
                   <button
-                    className="bg-green-500 text-white px-4 py-2 mt-2 rounded"
+                    className="bg-green-300 hover:bg-green-200 text-white px-4 py-2 mt-2 rounded"
                     onClick={handleEditPlaylist}
                   >
                     Save
                   </button>
                   <button
-                    className="bg-gray-500 text-white px-4 py-2 mt-2 rounded ml-2"
+                    className="bg-red-100 hover:bg-red-200 text-white px-4 py-2 mt-2 rounded ml-2"
                     onClick={() => {
                       setEditData({ title: playlistTitle });
                       setIsEditing(false);
@@ -284,7 +348,9 @@ const Playlist = ({
             <Ellipsis />
           </button>
           {showDropdown && (
-            <div className="absolute top-8 shadow-md rounded-lg py-2 w-48 z-20">
+            <div className="absolute top-8 shadow-md rounded-lg py-2 w-32 z-20"
+                 ref={dropdownRef} // Gắn ref vào dropdown
+            >
               <button
                 className="block px-4 py-2 text-sm text-gray-700 bg-gray-500 hover:bg-gray-200 w-full text-left"
                 onClick={() => {
@@ -295,13 +361,22 @@ const Playlist = ({
                 Edit Playlist
               </button>
               <button
-                className="block px-4 py-2 text-sm text-red-700 bg-gray-500 hover:bg-gray-200 w-full text-left"
+                className="block px-4 py-2 text-sm  bg-gray-500 hover:bg-gray-200 w-full text-left"
                 onClick={() => {
                   setIsDeletionConfirmationOpen(true);
                   setShowDropdown(false);
                 }}
               >
                 Delete Playlist
+              </button>
+              <button
+                className="block px-4 py-2 text-sm bg-gray-500 hover:bg-gray-200 w-full text-left"
+                onClick={() => {
+                  setIsAddSongsModalOpen(true);
+                  setShowDropdown(false);
+                }}
+              >
+                Add Songs
               </button>
             </div>
           )}
@@ -328,13 +403,13 @@ const Playlist = ({
             />
             <div className="flex justify-end space-x-2">
               <button
-                className="px-4 py-2 bg-gray-600 text-white rounded"
+                className="px-4 py-2 bg-red-100 hover:bg-red-200 text-white rounded"
                 onClick={() => setIsDeletionConfirmationOpen(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-red-600 text-white rounded"
+                className="px-4 py-2 bg-green-300 hover:bg-green-100 text-white rounded"
                 onClick={confirmDeletePlaylist}
                 disabled={isDeleting}
               >
@@ -344,6 +419,15 @@ const Playlist = ({
           </div>
         </div>
       )}
+
+      <AddSongsModal
+        isOpen={isAddSongsModalOpen}
+        onClose={() => setIsAddSongsModalOpen(false)}
+        STRAPI_BASE_URL={STRAPI_BASE_URL}
+        playlistId={playlistId}
+        refreshPlaylist={refreshPlaylist}
+        currentPlaylistSongs={playlist} // Pass the current playlist songs
+      />
 
       {/* Track List Rendering Remains the Same as in Previous Implementation */}
       <div className="bg-gray-900">
@@ -357,16 +441,16 @@ const Playlist = ({
             return (
               <div
                 key={index}
-                className={`grid grid-cols-[auto,3fr,2fr,1fr] gap-4 items-center px-8 py-4
-              hover:bg-gray-500 rounded-none cursor-pointer transition-colors
-              ${isCurrentlyPlaying ? "bg-gray-500" : currentTrackIndex === index ? "bg-gray-2999" : ""}`}
-                onClick={() => onTrackSelect(index)} // Track selection
+                className={`relative grid grid-cols-[auto,3fr,2fr,1fr,auto] gap-4 items-center px-8 py-4
+                  hover:bg-gray-500 rounded-none cursor-pointer transition-colors group
+                  ${isCurrentlyPlaying ? "bg-gray-500" : currentTrackIndex === index ? "bg-gray-2999" : ""}`}
+                onClick={() => onTrackSelect(index)}
                 onMouseEnter={() => setHoveredTrackIndex(index)}
                 onMouseLeave={() => setHoveredTrackIndex(null)}
               >
                 <div className="relative w-6 flex items-center justify-center">
                   {hoveredTrackIndex === index || isCurrentlyPlaying ? (
-                    <PlayCircle className="w-5 h-5 text-green-500" />
+                    <PlayCircle className="w-5 h-5 text-green-200" />
                   ) : (
                     <span className="text-gray-400">{index + 1}</span>
                   )}
@@ -419,6 +503,21 @@ const Playlist = ({
 
                 <div className="text-gray-400 flex-shrink-0">
                   {duration ? formatDuration(duration) : "--:--"}
+                </div>
+
+                {/* Trash icon column */}
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent track selection
+                      handleTrackDelete(track.id);
+                    }}
+                    className="text-red-500 hover:text-red-200 transition-colors"
+                    title="Remove track from playlist"
+                    disabled={isDeletingTrack}
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
             );

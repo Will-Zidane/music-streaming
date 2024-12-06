@@ -15,6 +15,13 @@ export default function Layout({ children, title, desc }) {
   const isProfilePage = router.pathname === '/profile';
   const isPaymentPage = router.pathname === '/payment';
 
+  const handleCollapseLibrary = () => {
+    const libraryPanel = document.getElementById("library-panel");
+    if (libraryPanel) {
+      libraryPanel.style.flex = "0 0 6%"; // Giảm kích thước panel xuống còn 6%
+    }
+  };
+
   // If on login page, render a simplified layout
   if (isLoginPage || isProfilePage || isPaymentPage) {
     return (
@@ -45,7 +52,7 @@ export default function Layout({ children, title, desc }) {
           className="bg-gray-100 h-full"
         >
           <div className="h-full ">
-            <Library isReadOnly={!isAuthenticated} />
+            <Library isReadOnly={!isAuthenticated} onCollapseLibrary={handleCollapseLibrary} />
           </div>
         </Panel>
 
