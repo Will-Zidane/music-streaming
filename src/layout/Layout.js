@@ -14,6 +14,8 @@ export default function Layout({ children, title, desc }) {
   const isLoginPage = router.pathname === '/login';
   const isProfilePage = router.pathname === '/profile';
   const isPaymentPage = router.pathname === '/payment';
+  const isRegisterPage = router.pathname === '/register';
+  const isForgotPasswordPage = router.pathname === '/forgotpassword';
 
   const handleCollapseLibrary = () => {
     const libraryPanel = document.getElementById("library-panel");
@@ -23,7 +25,7 @@ export default function Layout({ children, title, desc }) {
   };
 
   // If on login page, render a simplified layout
-  if (isLoginPage || isProfilePage || isPaymentPage) {
+  if (isLoginPage || isProfilePage || isPaymentPage || isRegisterPage || isForgotPasswordPage) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Head>

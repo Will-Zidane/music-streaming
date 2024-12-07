@@ -959,6 +959,7 @@ export interface ApiSongSong extends Schema.CollectionType {
       "api::playlist.playlist"
     >;
     coverArt: Attribute.Media<"images" | "files" | "videos" | "audios">;
+    listenTime: Attribute.Integer;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

@@ -20,7 +20,7 @@ export function MusicProvider({ children }) {
         const response = await fetch(`${STRAPI_BASE_URL}/api/songs?populate=*`);
 
         if (!response.ok) {
-          throw new Error('Failed to fetch songs');
+          throw new Error("Failed to fetch playlist");
         }
 
         const data = await response.json();
@@ -41,6 +41,7 @@ export function MusicProvider({ children }) {
 
   const formatSongData = (songs) => {
     return songs.map(song => ({
+      songId: song.id, // Change to songId to make it explicit
       title: song.attributes.name,
       artist: song.attributes.authors?.data?.length > 0
         ? song.attributes.authors.data
@@ -48,7 +49,7 @@ export function MusicProvider({ children }) {
           .join(", ")
         : 'Unknown Artist',
       album: song.attributes.album?.data?.attributes?.name || "Unknown Album",
-      url: `${STRAPI_BASE_URL}${song.attributes.src.data.attributes.url}`,
+      url: `${STRAPI_BASE_URL}${song.attributes.src?.data?.attributes?.url}`,
       coverArt: song.attributes.coverArt?.data?.attributes?.url
         ? `${STRAPI_BASE_URL}${song.attributes.coverArt.data.attributes.url}`
         : "/default-cover.jpg"
@@ -56,10 +57,12 @@ export function MusicProvider({ children }) {
   };
 
 
+
   const loadPlaylist = (playlist) => {
     const formattedPlaylist = playlist.map(song => {
       const songAttributes = song.attributes || {};
       return {
+        songId: song.id || songAttributes.id, // Add this line to preserve the ID
         title: songAttributes.name || 'Unknown Song',
         artist: songAttributes.authors?.data?.map(author => author.attributes.name).join(", ") || 'Unknown Artist',
         album: songAttributes.album?.data?.attributes?.name || "Unknown Album",
@@ -71,6 +74,7 @@ export function MusicProvider({ children }) {
     });
     setPlaylistData(formattedPlaylist);
     setActivePlaylist(formattedPlaylist);
+
   };
 
   const handleTrackChange = (index, playlist = null) => {

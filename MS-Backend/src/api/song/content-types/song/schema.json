@@ -53,6 +53,9 @@
         "videos",
         "audios"
       ]
+    },
+    "listenTime": {
+      "type": "integer"
     }
   }
 }

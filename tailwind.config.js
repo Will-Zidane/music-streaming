@@ -26,6 +26,7 @@ module.exports = {
       // black
 
       "black-100":"#000000",
+      "black-200":"#3C3D37",
 
       // green
       "green-100":"#3BE477",
@@ -35,6 +36,8 @@ module.exports = {
       // red dark
       "red-100":"#8b0000",
       "red-200":"#dc143c",
+
+
     },
   },
   plugins: []
