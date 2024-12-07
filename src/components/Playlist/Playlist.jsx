@@ -1,10 +1,11 @@
-import React, { useState, useEffect,useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { PlayCircle, Ellipsis, Trash2 } from "lucide-react";
 import { useAuth } from "@/utils/AuthContext";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import AddSongsModal from "@/components/AddSongModal/AddSongModal";
+
 export const getFullUrl = (relativePath, STRAPI_BASE_URL) => {
   if (!relativePath) return "/default-cover.jpg";
   if (relativePath.startsWith("http")) return relativePath;
@@ -28,8 +29,6 @@ const Playlist = ({
   playlistId,
   refreshPlaylist, // New prop to refresh playlist after edit
 }) => {
-
-
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -53,6 +52,8 @@ const Playlist = ({
 
   const [isAddSongsModalOpen, setIsAddSongsModalOpen] = useState(false);
 
+  const isHomePage = router.pathname === "/";
+
   // Hàm xử lý click bên ngoài dropdown
   const handleClickOutside = (event) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -69,7 +70,6 @@ const Playlist = ({
       window.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
 
   // Load track durations
   const loadTrackDurations = async () => {
@@ -227,7 +227,9 @@ const Playlist = ({
   }
 
   const handleTrackDelete = async (trackId) => {
-    const confirmDelete = window.confirm("Are you sure you want to remove this track from the playlist?");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to remove this track from the playlist?",
+    );
     if (!confirmDelete) return;
 
     try {
@@ -243,11 +245,11 @@ const Playlist = ({
           body: JSON.stringify({
             data: {
               songs: {
-                disconnect: [{ id: trackId }]
-              }
-            }
-          })
-        }
+                disconnect: [{ id: trackId }],
+              },
+            },
+          }),
+        },
       );
 
       if (!updateResponse.ok) {
@@ -265,10 +267,9 @@ const Playlist = ({
     }
   };
 
-
   return (
     <div className="h-full overflow-y-auto min-h-[690px]">
-      {isAuthenticated && (
+      {!isHomePage && isAuthenticated && (
         <div className="bg-gray-300 rounded-sm">
           <div className="flex items-center gap-6">
             <div className="relative w-48 h-48">
@@ -333,55 +334,58 @@ const Playlist = ({
         </div>
       )}
 
-      <div className="bg-gray-900 h-10 my-4 ml-6 flex items-center">
-        <button
-          className="text-green-300 inline-block p-2 rounded-full"
-          onClick={handlePlayFirstTrack}
-        >
-          <PlayCircle />
-        </button>
-        <div className="relative ml-2">
+      {!isHomePage && (
+        <div className="bg-gray-900 h-10 my-4 ml-6 flex items-center">
           <button
-            className="inline-block p-2 rounded-full"
-            onClick={toggleDropdown}
+            className="text-green-300 inline-block p-2 rounded-full"
+            onClick={handlePlayFirstTrack}
           >
-            <Ellipsis />
+            <PlayCircle />
           </button>
-          {showDropdown && (
-            <div className="absolute top-8 shadow-md rounded-lg py-2 w-32 z-20"
-                 ref={dropdownRef} // Gắn ref vào dropdown
+          <div className="relative ml-2">
+            <button
+              className="inline-block p-2 rounded-full"
+              onClick={toggleDropdown}
             >
-              <button
-                className="block px-4 py-2 text-sm text-gray-700 bg-gray-500 hover:bg-gray-200 w-full text-left"
-                onClick={() => {
-                  setIsEditing(true);
-                  setShowDropdown(false);
-                }}
+              <Ellipsis />
+            </button>
+            {showDropdown && (
+              <div
+                className="absolute top-8 shadow-md rounded-lg py-2 w-32 z-20"
+                ref={dropdownRef} // Gắn ref vào dropdown
               >
-                Edit Playlist
-              </button>
-              <button
-                className="block px-4 py-2 text-sm  bg-gray-500 hover:bg-gray-200 w-full text-left"
-                onClick={() => {
-                  setIsDeletionConfirmationOpen(true);
-                  setShowDropdown(false);
-                }}
-              >
-                Delete Playlist
-              </button>
-              <button
-                className="block px-4 py-2 text-sm bg-gray-500 hover:bg-gray-200 w-full text-left"
-                onClick={() => {
-                  setIsAddSongsModalOpen(true);
-                  setShowDropdown(false);
-                }}
-              >
-                Add Songs
-              </button>
-            </div>
-          )}
+                <button
+                  className="block px-4 py-2 text-sm text-gray-700 bg-gray-500 hover:bg-gray-200 w-full text-left"
+                  onClick={() => {
+                    setIsEditing(true);
+                    setShowDropdown(false);
+                  }}
+                >
+                  Edit Playlist
+                </button>
+                <button
+                  className="block px-4 py-2 text-sm  bg-gray-500 hover:bg-gray-200 w-full text-left"
+                  onClick={() => {
+                    setIsDeletionConfirmationOpen(true);
+                    setShowDropdown(false);
+                  }}
+                >
+                  Delete Playlist
+                </button>
+                <button
+                  className="block px-4 py-2 text-sm bg-gray-500 hover:bg-gray-200 w-full text-left"
+                  onClick={() => {
+                    setIsAddSongsModalOpen(true);
+                    setShowDropdown(false);
+                  }}
+                >
+                  Add Songs
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Deletion Confirmation Overlay */}
       {isDeletionConfirmationOpen && (
@@ -441,7 +445,7 @@ const Playlist = ({
             return (
               <div
                 key={index}
-                className={`relative grid grid-cols-[auto,3fr,2fr,1fr,auto] gap-4 items-center px-8 py-4
+                className={`relative grid grid-cols-[auto,3fr,1fr,4fr,1fr,auto] gap-4 items-center px-8 py-4
                   hover:bg-gray-500 rounded-none cursor-pointer transition-colors group
                   ${isCurrentlyPlaying ? "bg-gray-500" : currentTrackIndex === index ? "bg-gray-2999" : ""}`}
                 onClick={() => onTrackSelect(index)}
@@ -483,6 +487,13 @@ const Playlist = ({
                       </span>
                     </Link>
                   </div>
+                </div>
+
+                <div className="text-gray-200">
+                  {track?.attributes.listenTime &&
+                  typeof track.attributes.listenTime === "string"
+                    ? track.attributes.listenTime.replace("$", "")
+                    : track?.attributes.listenTime || 0}{" "}
                 </div>
 
                 <div className=" text-white truncate">

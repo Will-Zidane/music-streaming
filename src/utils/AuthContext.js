@@ -7,6 +7,7 @@ const AuthContext = createContext({
   isLoading: true,
   login: async () => {},
   logout: () => {},
+  register: async () => {},
   updateUser: async () => {},
   refreshUser: async () => {},
 });
@@ -59,13 +60,12 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserData = async (token) => {
     try {
-      // Use the users endpoint with filters instead of /me
       const response = await api.get('/api/users/me', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
         params: {
-          populate: '*', // Include all relations, including avatar
+          populate: '*',
         },
       });
       return processUserData(response.data);
@@ -122,6 +122,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (username, email, password) => {
+    try {
+      const response = await api.post('/api/auth/local/register', {
+        username,
+        email,
+        password,
+      });
+
+      // Registration logic remains the same
+    } catch (error) {
+      console.error('Registration failed:', {
+        status: error.response?.status,
+        data: JSON.stringify(error.response?.data, null, 2), // Detailed JSON parsing
+        headers: error.response?.headers,
+        message: error.message
+      });
+      throw error;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('strapiToken');
     setUser(null);
@@ -134,7 +154,6 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      // Use the specific user ID endpoint instead of /me
       const response = await api.put(`/api/users/${user.id}`, newData);
       const updatedUserData = processUserData(response.data);
       setUser(updatedUserData);
@@ -165,6 +184,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const resetPassword = async (email) => {
+    try {
+      // Make a request to Strapi's password reset endpoint
+      const response = await api.post('/api/auth/forgot-password', {
+        email,
+      });
+
+      // Strapi's forgot password endpoint typically returns a simple success response
+      return response.data;
+    } catch (error) {
+      console.error('Password reset failed:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+
+      // Rethrow the error to be handled by the calling component
+      throw error;
+    }
+  };
+
+
   return (
     <AuthContext.Provider
       value={{
@@ -173,8 +214,10 @@ export const AuthProvider = ({ children }) => {
         isLoading,
         login,
         logout,
+        register,
         updateUser,
         refreshUser,
+        resetPassword,
       }}
     >
       {children}

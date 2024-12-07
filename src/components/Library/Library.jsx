@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, X, Check, ArrowLeft } from "lucide-react";
-import { useRouter } from "next/router";
 import { useAuth } from "@/utils/AuthContext";
+import { ArrowLeft, Check, Plus, Search, X } from "lucide-react";
+import { useRouter } from "next/router";
+import { useEffect, useState } from 'react';
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
 
 
@@ -48,7 +48,7 @@ const Library = () => {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch songs');
+        return null;
       }
 
       const data = await response.json();
@@ -268,7 +268,7 @@ const Library = () => {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch songs');
+        return null;
       }
 
       const data = await response.json();

@@ -1,16 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import { useMusicContext } from '@/utils/MusicProvider';
-import Playlist from '@/components/Playlist/Playlist';
-import albums from "@/components/Albums/Albums";
-
-
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { useMusicContext } from "@/utils/MusicProvider";
+import Playlist from "@/components/Playlist/Playlist";
 
 const PlaylistPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const [playlist, setPlaylist] = useState([]);
-  const [playlistTitle, setPlaylistTitle] = useState(''); // State for storing the playlist title
+  const [playlistTitle, setPlaylistTitle] = useState(""); // State for storing the playlist title
 
   const {
     currentTrackIndex,
@@ -23,14 +20,12 @@ const PlaylistPage = () => {
   useEffect(() => {
     let isMounted = true;
 
-
-
     const fetchPlaylist = async () => {
       if (!id) return;
 
       try {
         const response = await fetch(
-          `${STRAPI_BASE_URL}/api/playlists/${id}?populate[songs][populate]=coverArt,authors,album,src&populate[coverArt]=*`
+          `${STRAPI_BASE_URL}/api/playlists/${id}?populate[songs][populate]=coverArt,authors,album,src&populate[coverArt]=*`,
         );
         const data = await response.json();
 
@@ -40,36 +35,48 @@ const PlaylistPage = () => {
           const playlistTitle = data.data.attributes.title; // Extract the playlist title
           setPlaylistTitle(playlistTitle); // Set the playlist title to state
           const selectedPlaylist = data.data;
-          const formattedTracks = selectedPlaylist.attributes.songs.data.map(song => ({
-            id: song.id,
-            attributes: {
-              name: song.attributes.name,
-              coverArt: song.attributes.coverArt || selectedPlaylist.attributes.coverArt,
-              src: song.attributes.src,
-              album: {
-                data: {
-                  id: song.attributes.album?.data?.id || null,  // Ensure album id is set properly
-                  attributes: {
-                    name: song.attributes.album?.data?.attributes?.name || selectedPlaylist.attributes.title
-                  }
-                }
-              },
-              authors: {
-                data: song.attributes.authors?.data || [{
-                  attributes: {
-                    name: selectedPlaylist.attributes.artist
-                  }
-                }]
-              }
-            }
-          }));
+          const formattedTracks = selectedPlaylist.attributes.songs.data
+            .map((song) => {
+              console.log(song)
+              return {
+                id: song.id,
+                attributes: {
+                  name: song.attributes.name,
+                  coverArt:
+                    song.attributes.coverArt ||
+                    selectedPlaylist.attributes.coverArt,
+                  src: song.attributes.src,
+                  listenTime: Number(song.attributes.listenTime || 0),
 
+                  album: {
+                    data: {
+                      id: song.attributes.album?.data?.id || null, // Ensure album id is set properly
+                      attributes: {
+                        name:
+                          song.attributes.album?.data?.attributes?.name ||
+                          selectedPlaylist.attributes.title,
+                      },
+                    },
+                  },
+                  authors: {
+                    data: song.attributes.authors?.data || [
+                      {
+                        attributes: {
+                          name: selectedPlaylist.attributes.artist,
+                        },
+                      },
+                    ],
+                  },
+                },
+              };
+            })
+            .filter((track) => track.attributes); // Filter out tracks without src
 
           setPlaylist(formattedTracks);
         }
       } catch (error) {
         if (isMounted) {
-          console.error('Error fetching playlist:', error);
+          console.error("Error fetching playlist:", error);
         }
       }
     };

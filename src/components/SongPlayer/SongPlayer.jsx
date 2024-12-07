@@ -3,6 +3,8 @@ import { Howl } from "howler";
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, Maximize2 } from "lucide-react";
 import { useMusicContext } from "@/utils/MusicProvider";
 
+const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
+
 const SongPlayer = () => {
   const {
     playlistData,
@@ -10,6 +12,7 @@ const SongPlayer = () => {
     handleTrackChange,
     activePlaylist
   } = useMusicContext();
+
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -20,6 +23,52 @@ const SongPlayer = () => {
   const soundRef = useRef(null);
 
   const currentPlaylist = activePlaylist || playlistData;
+
+  const incrementListenTime = async (songId) => {
+    console.log('Song ID:', songId);
+
+    try {
+      // First, fetch the current song data
+      const fetchResponse = await fetch(`${STRAPI_BASE_URL}/api/songs/${songId}?populate=*`, {
+        method: 'GET',
+      });
+
+      if (!fetchResponse.ok) {
+        console.error('Fetch Response not OK:', fetchResponse.status, fetchResponse.statusText);
+        throw new Error('Failed to fetch song data');
+      }
+
+      const songData = await fetchResponse.json();
+      console.log('Song Data:', songData);
+
+      // Get current listen time, default to 0 if not exists
+      const currentListenTime = Number(songData.data.attributes.listenTime || 0);
+      // Update listen time
+      const updateResponse = await fetch(`${STRAPI_BASE_URL}/api/songs/${songId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: {
+            listenTime: currentListenTime + 1
+          }
+        })
+      });
+
+      console.log('Current Listen Time:', currentListenTime + 1);
+
+
+      if (!updateResponse.ok) {
+        console.error('Update Response not OK:', updateResponse.status, updateResponse.statusText);
+        throw new Error('Failed to update listen time');
+      }
+
+      console.log('Listen time updated successfully');
+    } catch (error) {
+      console.error('Full error in incrementListenTime:', error);
+    }
+  };
 
   useEffect(() => {
     if (audioContextStarted && currentPlaylist && currentPlaylist.length > 0) {
@@ -74,21 +123,31 @@ const SongPlayer = () => {
   };
 
   const handleTrackEnd = () => {
+    const currentTrack = currentPlaylist[currentTrackIndex];
+
+    // Try to extract songId from multiple possible locations
+    const songId = currentTrack?.songId ||
+      currentTrack?.id ||
+      (currentTrack?.attributes?.id);
+
+    if (songId) {
+      incrementListenTime(songId);
+    } else {
+      console.error('No track ID found', currentTrack);
+    }
+
     const isLastTrack = currentTrackIndex === currentPlaylist.length - 1;
 
     if (isLastTrack) {
       if (isRepeatEnabled) {
-        // If repeat is enabled, go back to the first track
         handleTrackChange(0);
       } else {
-        // If repeat is disabled, stop playback
         setIsPlaying(false);
         if (soundRef.current) {
           soundRef.current.stop();
         }
       }
     } else {
-      // If it's not the last track, play the next track
       handleNext();
     }
   };

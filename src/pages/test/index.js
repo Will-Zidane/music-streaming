@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useAuth } from "@/utils/AuthContext";
 import Albums from "@/components/Albums/Albums";
+import LoginForm from "@/components/Auth/LoginForm";
 
 export default function TestPage() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function TestPage() {
 
   return (
     <div className="container mx-auto py-6">
-      <Albums />
+      <LoginForm />
     </div>
   );
 }
