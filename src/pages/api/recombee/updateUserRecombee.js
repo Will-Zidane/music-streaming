@@ -1,44 +1,42 @@
-import { setUserValuesToRecombee } from '@/utils/recombee'; // Import the function to update user values in Recombee
+// api/recombee/updateUserRecombee.js
+import { setUserValues } from '@/utils/recombee'; // Import hàm setUserValues thay vì updateUserValues
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
-      console.log('Received request body:', JSON.stringify(req.body, null, 2));
-
       const { userId, listenTime } = req.body;
 
-      // Validate that userId and listenTime are provided and listenTime is a number
+      // Validate input
       if (!userId || typeof listenTime !== 'number') {
-        console.error('Invalid request body: userId and listenTime are required');
-        return res.status(400).json({ error: "'userId' and 'listenTime' are required and listenTime must be a number" });
+        return res.status(400).json({
+          error: "'userId' and 'listenTime' are required and listenTime must be a number"
+        });
       }
 
-      // Retrieve the current user's total listen time from Recombee
-      const userProperties = await client.send(new rqs.GetUserValues(userId.toString(), ['totalListenTime']));
+      // Check if the user exists in Recombee
+      const userExists = await client
+        .send(new rqs.GetUserValues(userId.toString(), ['totalListenTime']))
+        .catch(() => null);
 
-      // Get current totalListenTime, default to 0 if it doesn't exist
-      const currentTotalListenTime = Number(userProperties.totalListenTime || 0);
-      const updatedTotalListenTime = currentTotalListenTime + listenTime;
+      if (!userExists) {
+        // If user does not exist, create the user in Recombee
+        console.log(`User with ID ${userId} does not exist. Creating user.`);
+        await client.send(new rqs.AddUser(userId.toString()));
+      }
 
-      console.log('Updating total listen time for user:', userId);
-
-      // Call the function to update the total listen time for the user in Recombee
-      await setUserValuesToRecombee(userId, { totalListenTime: updatedTotalListenTime });
+      // Use setUserValues to update the user's total listen time
+      await setUserValues(userId, { totalListenTime: listenTime }, true);
 
       return res.status(200).json({
         message: 'User total listen time successfully updated in Recombee',
         userId,
-        totalListenTime: updatedTotalListenTime
+        totalListenTime: listenTime,
       });
     } catch (error) {
-      console.error('Detailed Recombee API Route Error:', {
-        message: error.message,
-        stack: error.stack,
-        details: error.response?.data || 'No additional error details'
-      });
+      console.error('Error updating user total listen time in Recombee:', error);
       return res.status(500).json({
-        error: 'Failed to update total listen time in Recombee',
-        details: error.message
+        error: 'Failed to update user total listen time in Recombee',
+        details: error.message,
       });
     }
   } else {

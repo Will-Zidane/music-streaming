@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Howl } from "howler";
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, Maximize2 } from "lucide-react";
 import { useMusicContext } from "@/utils/MusicProvider";
+import axios from "axios";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
 
@@ -28,7 +29,7 @@ const SongPlayer = () => {
     console.log('Song ID:', songId);
 
     try {
-      // First, fetch the current song data
+      // First, fetch the current song data from your local database (Strapi or wherever it's stored)
       const fetchResponse = await fetch(`${STRAPI_BASE_URL}/api/songs/${songId}?populate=*`, {
         method: 'GET',
       });
@@ -43,7 +44,8 @@ const SongPlayer = () => {
 
       // Get current listen time, default to 0 if not exists
       const currentListenTime = Number(songData.data.attributes.listenTime || 0);
-      // Update listen time
+
+      // Update the local database with the incremented listen time
       const updateResponse = await fetch(`${STRAPI_BASE_URL}/api/songs/${songId}`, {
         method: 'PUT',
         headers: {
@@ -51,20 +53,42 @@ const SongPlayer = () => {
         },
         body: JSON.stringify({
           data: {
-            listenTime: currentListenTime + 1
-          }
-        })
+            listenTime: currentListenTime + 1,
+          },
+        }),
       });
-
-      console.log('Current Listen Time:', currentListenTime + 1);
-
 
       if (!updateResponse.ok) {
         console.error('Update Response not OK:', updateResponse.status, updateResponse.statusText);
-        throw new Error('Failed to update listen time');
+        throw new Error('Failed to update local song listen time');
       }
 
-      console.log('Listen time updated successfully');
+      console.log('Current Listen Time:', currentListenTime + 1);
+
+      // Now, also update the listen time in Recombee via your API endpoint
+      const response = await axios.post('/api/recombee/updateListenTime', {
+        itemId: songId,  // Pass the songId as itemId for Recombee
+        listenTime: currentListenTime + 1,  // Send the updated listen time
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const userId = songData.data.attributes.userId;  // Assuming song data contains userId
+      const updatedListenTime = currentListenTime + 1;
+
+      console.log(userId, updatedListenTime);
+
+
+      if (response.status === 200) {
+        console.log('Listen time updated successfully in Recombee');
+      } else {
+        console.error('Error in updating listen time in Recombee:', response.status);
+      }
+
+
+
     } catch (error) {
       console.error('Full error in incrementListenTime:', error);
     }

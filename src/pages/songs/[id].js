@@ -1,6 +1,6 @@
+import axios from 'axios';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
 
