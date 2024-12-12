@@ -1,41 +1,27 @@
 // api/recombee/updateUserRecombee.js
-import { setUserValues } from '@/utils/recombee'; // Import hàm setUserValues thay vì updateUserValues
+import { setUserValues } from '@/utils/recombee';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
-      const { userId, listenTime } = req.body;
+      const { userId, username, email } = req.body;
 
-      // Validate input
-      if (!userId || typeof listenTime !== 'number') {
-        return res.status(400).json({
-          error: "'userId' and 'listenTime' are required and listenTime must be a number"
-        });
+      // Validate input data
+      if (!userId || !username || !email) {
+        return res.status(400).json({ error: 'UserId, username, and email are required' });
       }
 
-      // Check if the user exists in Recombee
-      const userExists = await client
-        .send(new rqs.GetUserValues(userId.toString(), ['totalListenTime']))
-        .catch(() => null);
-
-      if (!userExists) {
-        // If user does not exist, create the user in Recombee
-        console.log(`User with ID ${userId} does not exist. Creating user.`);
-        await client.send(new rqs.AddUser(userId.toString()));
-      }
-
-      // Use setUserValues to update the user's total listen time
-      await setUserValues(userId, { totalListenTime: listenTime }, true);
+      // Call the function to update the user in Recombee
+      await setUserValues(userId, username, email);
 
       return res.status(200).json({
-        message: 'User total listen time successfully updated in Recombee',
+        message: 'User successfully updated in Recombee',
         userId,
-        totalListenTime: listenTime,
       });
     } catch (error) {
-      console.error('Error updating user total listen time in Recombee:', error);
+      console.error('Error processing user request:', error);
       return res.status(500).json({
-        error: 'Failed to update user total listen time in Recombee',
+        error: 'Failed to process user data',
         details: error.message,
       });
     }

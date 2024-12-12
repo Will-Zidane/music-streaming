@@ -25,5 +25,26 @@ function listUserDetailViews(userId) {
     });
 }
 
+function listItemDetailViews(itemId) {
+  if (!itemId) {
+    console.error('Item ID is required to list detail views.');
+    return;
+  }
+
+  // Send request to list item detail views
+  client.send(new rqs.ListItemDetailViews(itemId.toString()))
+    .then((response) => {
+      // Handle success
+      console.log(`Detail views for item ${itemId} retrieved successfully:`);
+      console.log(response);
+    })
+    .catch((error) => {
+      // Handle error
+      console.error(`Error retrieving detail views for item ${itemId}:`);
+      console.error(error.response?.data || error.message);
+    });
+}
+
 // Example usage
-listUserDetailViews('1'); // Replace '1' with the actual userId
+listUserDetailViews('26'); // Replace '1' with the actual userId
+// listItemDetailViews('9');

@@ -1,25 +1,26 @@
-// pages/api/recombee/addUserToRecombee.js
-import { addUserToRecombee } from '@/utils/recombee';
+// pages/api/recombee/addUserItemInteractions.js
+import { addDetailView } from '@/utils/recombee';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       console.log('Received request body:', JSON.stringify(req.body, null, 2));
 
-      const { userData } = req.body;
+      const { userId, itemId, options } = req.body;
 
-      if (!userData) {
-        console.error('No user data in request');
-        return res.status(400).json({ error: 'User data is required' });
+      // Validate required fields
+      if (!userId || !itemId) {
+        console.error('Missing required fields: userId or itemId');
+        return res.status(400).json({ error: 'userId and itemId are required' });
       }
 
-
       // Call the Recombee integration function
-      await addUserToRecombee(userData);
+      await addDetailView(userId, itemId, options);
 
       return res.status(200).json({
-        message: 'User successfully added to Recombee',
-        userId: userData.id
+        message: 'Detail view successfully added to Recombee',
+        userId,
+        itemId
       });
     } catch (error) {
       console.error('Detailed Recombee API Route Error:', {
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
         details: error.response?.data
       });
       return res.status(500).json({
-        error: 'Failed to add user to Recombee',
+        error: 'Failed to add detail view to Recombee',
         details: error.message
       });
     }
