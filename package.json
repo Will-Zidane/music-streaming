@@ -12,8 +12,9 @@
     "@paypal/react-paypal-js": "^8.7.0",
     "@shadcn/ui": "^0.0.4",
     "@tanstack/react-table": "^8.20.5",
+    "add": "^2.0.6",
     "autoprefixer": "^10.4.20",
-    "axios": "^1.7.7",
+    "axios": "^1.7.9",
     "howler": "^2.2.4",
     "lucide-react": "^0.453.0",
     "next": "^15.0.3",
@@ -23,7 +24,8 @@
     "react-h5-audio-player": "^3.9.3",
     "react-resizable-panels": "^2.1.2",
     "react-sortable-hoc": "^2.0.0",
-    "recombee-api-client": "^4.1.5"
+    "recombee-api-client": "^4.1.5",
+    "yarn": "^1.22.22"
   },
   "devDependencies": {
     "postcss": "^8.4.41",

@@ -75,20 +75,6 @@ const SongPlayer = () => {
         }
       });
 
-      const userId = songData.data.attributes.userId;  // Assuming song data contains userId
-      const updatedListenTime = currentListenTime + 1;
-
-      console.log(userId, updatedListenTime);
-
-
-      if (response.status === 200) {
-        console.log('Listen time updated successfully in Recombee');
-      } else {
-        console.error('Error in updating listen time in Recombee:', response.status);
-      }
-
-
-
     } catch (error) {
       console.error('Full error in incrementListenTime:', error);
     }

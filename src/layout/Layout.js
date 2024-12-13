@@ -88,7 +88,7 @@ export default function Layout({ children, title, desc }) {
     </Head>
     <Navbar />
 
-    <div className="flex-1 mt-16 mb-20 bg-gray-100">
+    <div className="flex-1 mt-16 mb-20 bg-gray-100 ">
       <PanelGroup direction="horizontal" className="h-full">
         {/* Left Panel with Library */}
         <Panel

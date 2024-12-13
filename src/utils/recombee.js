@@ -1,9 +1,14 @@
+// utils/recombee.js
 const recombee = require('recombee-api-client');
 const rqs = recombee.requests;
 
+const DATABASE_ID = process.env.RECOMBEE_DATABASE_ID;
+const DATABASE_REGION = process.env.RECOMBEE_DATABASE_REGION;
+const DATABASE_SECRET = process.env.RECOMBEE_PRIVATE_TOKEN;
+
 // Client initialization
-const client = new recombee.ApiClient('thewz-thewiz', 'ahi3VNWptGKy1nCAqhFyARS7fWS7WqhKUCWrXrzSu8A413LTETD9aiBLLCur8mfA', {
-  region: 'us-west',
+const client = new recombee.ApiClient(DATABASE_ID, DATABASE_SECRET, {
+  region: DATABASE_REGION,
 });
 
 // Timeout value to be used for the requests
@@ -17,7 +22,6 @@ async function defineUserProperties() {
     // Define the properties for the users with explicit types and defaults
     await client.send(new rqs.AddUserProperty('username', 'string', { defaultValue: '' }));
     await client.send(new rqs.AddUserProperty('email', 'string', { defaultValue: '' }));
-    await client.send(new rqs.AddUserProperty('totalListenTime', 'int', { defaultValue: 0 }));
 
     console.log('User properties defined successfully.');
   } catch (error) {
@@ -48,8 +52,6 @@ async function getUserFromRecombee(userId, userData) {
       {
         username: userData?.username || userProperties.username || 'unknown',
         email: userData?.email || userProperties.email || 'unknown@example.com',
-        totalListenTime: userData?.totalListenTime ||
-          (userProperties.totalListenTime || 0)
       },
       {
         cascadeCreate: true  // Automatically create user if not exists
@@ -77,10 +79,10 @@ async function getUserFromRecombee(userId, userData) {
 }
 
 // Function to add a user to Recombee
-const addUserToRecombee = async (userData, playlists = []) => {
+const addUserToRecombee = async (userData) => {
   try {
     console.log('Raw userData:', userData);
-    await defineUserProperties();
+    // await defineUserProperties();
 
     if (!userData) {
       console.error('No user data provided');
@@ -101,13 +103,8 @@ const addUserToRecombee = async (userData, playlists = []) => {
     // Send the request with timeout
     await client.send(addUserRequest);
 
-    const totalListenTime = playlists.reduce((total, playlist) => {
-      return total + (playlist.songs || []).reduce((songTotal, song) => {
-        return songTotal + (song?.listenTime || 0);
-      }, 0);
-    }, 0);
 
-    console.log('Setting user values:', { username: safeUserData.username, email: safeUserData.email, totalListenTime });
+    console.log('Setting user values:', { username: safeUserData.username, email: safeUserData.email});
 
     // Define the SetUserValues request
     const setUserValuesRequest = new rqs.SetUserValues(
@@ -115,7 +112,6 @@ const addUserToRecombee = async (userData, playlists = []) => {
       {
         username: safeUserData.username,
         email: safeUserData.email,
-        totalListenTime: totalListenTime
       }
     );
     // Apply timeout to the SetUserValues request object
@@ -154,39 +150,60 @@ async function setItemValues(itemId, values, cascadeCreate = false) {
 }
 
 // New function to add detail view (track song listen time, etc.)
-async function addDetailView(userId, itemId, { timestamp, duration, cascadeCreate, recommId }) {
+async function addDetailView(userId, itemId, { timestamp, duration, cascadeCreate = false, recommId } = {}) {
   try {
     console.log(`Adding detail view for User: ${userId}, Item: ${itemId}`);
 
-    // Create an AddDetailView request with the optional parameters
+    // Tạo yêu cầu AddDetailView với các tham số tùy chọn
     const addDetailViewRequest = new rqs.AddDetailView(userId, itemId, {
-      timestamp,        // Optional: Timestamp for when the listen happened
-      duration,         // Optional: Duration of the view (e.g., song listen time)
-      cascadeCreate,    // Optional: Create the item if it doesn't exist
-      recommId          // Optional: A recommendation ID, if available
+      ...(timestamp && { timestamp }),   // Thêm nếu timestamp tồn tại
+      ...(duration && { duration }),    // Thêm nếu duration tồn tại
+      cascadeCreate,                    // Mặc định là false
+      ...(recommId && { recommId })     // Thêm nếu recommId tồn tại
     });
-    // Apply timeout to the AddDetailView request object
+
+    // Gắn timeout cho request
     addDetailViewRequest.timeout = TIMEOUT;
 
-    // Send the request with timeout
+    // Gửi yêu cầu
     await client.send(addDetailViewRequest);
     console.log('Detail view added successfully.');
   } catch (error) {
-    console.error(`Error adding detail view for user ${userId} and item ${itemId}:`, error);
+    console.error(
+      `Error adding detail view for user ${userId} and item ${itemId}:`,
+      error.message || error
+    );
     throw error;
   }
 }
 
-// Function to set user values in Recombee
-async function setUserValues(userId, values, cascadeCreate = false) {
-  try {
-    console.log(`Setting user values for userId: ${userId}`, values);
 
-    // Define the SetUserValues request
+// Function to set user values in Recombee
+async function setUserValues(userId, username, email) {
+  try {
+    console.log('Updating user:', { userId, username, email });
+
+    // Check if the user exists in Recombee
+    const userExists = await client
+      .send(new rqs.GetUserValues(userId.toString()))
+      .catch(() => null);
+
+    if (!userExists) {
+      console.error(`User with ID ${userId} does not exist.`);
+      throw new Error(`User with ID ${userId} does not exist.`);
+    }
+
+    // Prepare the values to update (username and email)
+    const valuesToUpdate = {
+      username: username || 'unknown',
+      email: email || 'unknown@example.com'
+    };
+
+    // Define the SetUserValues request to update user details (username, email)
     const setUserValuesRequest = new rqs.SetUserValues(
       userId.toString(),
-      values,
-      { cascadeCreate } // Cascade create option
+      valuesToUpdate,
+      { cascadeCreate: false } // Assuming you don't want cascading creation on user data update
     );
 
     // Apply timeout to the SetUserValues request object
@@ -195,10 +212,47 @@ async function setUserValues(userId, values, cascadeCreate = false) {
     // Send the request with timeout
     await client.send(setUserValuesRequest);
 
-    console.log(`User values set successfully for userId: ${userId}`);
+    console.log(`User ${userId} updated successfully with username: ${username} and email: ${email}`);
   } catch (error) {
-    console.error(`Error setting user values for userId: ${userId}`, error);
+    console.error('Error updating user:', error);
     throw error;
+  }
+}
+
+
+// Existing functions (like defineUserProperties, setUserValues, etc.)
+
+// New function to recommend items to a user
+async function recommendItemsToUser(userId, count, options = {}) {
+  try {
+    console.log(`Recommending ${count} items to user ${userId} with options:`, options);
+
+    // Default parameters for RecommendItemsToUser request
+    const recommendRequest = new rqs.RecommendItemsToUser(userId, count, {
+      ...options, // Optional parameters
+      cascadeCreate: options.cascadeCreate || false,
+      returnProperties: options.returnProperties || false,
+      includedProperties: options.includedProperties || [],
+      filter: options.filter || '',
+      booster: options.booster || '',
+      logic: options.logic || {},
+      minRelevance: options.minRelevance || '0',
+      rotationRate: options.rotationRate || 0,
+      rotationTime: options.rotationTime || 0,
+    });
+
+    // Apply timeout to the request object
+    recommendRequest.timeout = TIMEOUT;
+
+    // Send the request to get recommended items
+    const response = await client.send(recommendRequest);
+    console.log(`Successfully recommended ${count} items to user ${userId}:`);
+    console.log(response);
+    return response; // Return the response to handle further in your application
+  } catch (error) {
+    console.error(`Error recommending items to user ${userId}:`, error);
+    console.error(error.response?.data || error.message);
+    throw error; // Rethrow the error to handle it in higher levels
   }
 }
 
@@ -232,4 +286,4 @@ async function setUserValues(userId, values, cascadeCreate = false) {
 //
 // exampleUserFlow();
 
-module.exports = { addUserToRecombee, getUserFromRecombee, setItemValues, addDetailView ,setUserValues};
+module.exports = { addUserToRecombee, getUserFromRecombee, setItemValues, addDetailView ,setUserValues, recommendItemsToUser};

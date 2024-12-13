@@ -140,8 +140,6 @@ export const AuthProvider = ({ children }) => {
           },
         },
       );
-
-
       return { user: userData, jwt };
     } catch (error) {
       console.error("Login failed:", error.response?.data || error.message);

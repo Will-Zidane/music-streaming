@@ -13,6 +13,8 @@ export function MusicProvider({ children }) {
   const [currentPlayingTrack, setCurrentPlayingTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+
+
   useEffect(() => {
     const fetchPlaylist = async () => {
       try {
@@ -59,23 +61,45 @@ export function MusicProvider({ children }) {
 
 
   const loadPlaylist = (playlist) => {
+    console.log('Incoming playlist:', playlist);
+
     const formattedPlaylist = playlist.map(song => {
-      const songAttributes = song.attributes || {};
+      console.log('Processing song:', song);
+      const songAttributes = song.attributes || song || {};
+
+      let coverArt;
+      if (song.coverArt) {
+        // If coverArt is directly provided
+        coverArt = song.coverArt.startsWith('http')
+          ? song.coverArt
+          : `${STRAPI_BASE_URL}${song.coverArt}`;
+      } else if (song.attributes?.coverArt?.data?.attributes?.url) {
+        // If coverArt is nested in attributes
+        coverArt = `${STRAPI_BASE_URL}${song.attributes.coverArt.data.attributes.url}`;
+      } else {
+        // Fallback to default cover
+        coverArt = "/default-cover.jpg";
+      }
+
       return {
-        songId: song.id || songAttributes.id, // Add this line to preserve the ID
-        title: songAttributes.name || 'Unknown Song',
-        artist: songAttributes.authors?.data?.map(author => author.attributes.name).join(", ") || 'Unknown Artist',
-        album: songAttributes.album?.data?.attributes?.name || "Unknown Album",
-        url: `${STRAPI_BASE_URL}${songAttributes.src?.data?.attributes?.url || ''}`,
-        coverArt: songAttributes.coverArt?.data?.attributes?.url
-          ? `${STRAPI_BASE_URL}${songAttributes.coverArt.data.attributes.url}`
-          : "/default-cover.jpg"
+        songId: song.id || songAttributes.id || songAttributes.songId,
+        title: songAttributes.name || songAttributes.title || 'Unknown Song',
+        artist: songAttributes.authors?.data?.map(author => author.attributes.name).join(", ")
+          || songAttributes.artist
+          || 'Unknown Artist',
+        album: songAttributes.album?.data?.attributes?.name
+          || songAttributes.album
+          || "Unknown Album",
+        url: `${STRAPI_BASE_URL}${songAttributes.src?.data?.attributes?.url || songAttributes.url || ''}`,
+        coverArt: coverArt
       };
     });
+
+    console.log('Formatted playlist URLs:', formattedPlaylist.map(item => item.url));
     setPlaylistData(formattedPlaylist);
     setActivePlaylist(formattedPlaylist);
-
   };
+
 
   const handleTrackChange = (index, playlist = null) => {
     if (playlist) {
@@ -111,6 +135,7 @@ export function MusicProvider({ children }) {
         isLoading,
         error,
         isPlaying,
+        setCurrentTrackIndex
       }}
     >
       {children}
@@ -121,7 +146,7 @@ export function MusicProvider({ children }) {
 export function useMusicContext() {
   const context = useContext(MusicContext);
   if (context === undefined) {
-    throw new Error('useMusicContext must be used within a MusicProvider');
+    throw new Error('useMusicContext must be used within a DropdownAddToPlaylist');
   }
   return context;
 }

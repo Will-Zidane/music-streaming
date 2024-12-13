@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { uploadFile } from "@/utils/uploadUtils";
 import { Camera, Upload, Maximize2, X ,Eye,EyeOff} from "lucide-react";
+import axios from "axios";
 
 
 const UserEditForm = ({ userId, onSuccess, isProfileEdit = false }) => {
@@ -158,6 +159,22 @@ const UserEditForm = ({ userId, onSuccess, isProfileEdit = false }) => {
       const updatedUser = await updateUser(updateData);
       setSuccess("Profile updated successfully");
       if (onSuccess) onSuccess(updatedUser);
+
+      const response = await axios.post('/api/recombee/updateUserRecombee', {
+        userId: user.id,       // Assuming user.id exists
+        username: formData.username,
+        email: formData.email,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (response.status === 200) {
+        console.log("User successfully updated in Recombee:", response.data);
+      } else {
+        throw new Error('Failed to update user in Recombee');
+      }
 
     } catch (error) {
       const errorMessage = error.response?.data?.error?.message ||

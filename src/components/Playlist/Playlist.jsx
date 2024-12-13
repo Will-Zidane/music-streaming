@@ -5,6 +5,7 @@ import { useAuth } from "@/utils/AuthContext";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import AddSongsModal from "@/components/AddSongModal/AddSongModal";
+import axios from "axios";
 
 export const getFullUrl = (relativePath, STRAPI_BASE_URL) => {
   if (!relativePath) return "/default-cover.jpg";
@@ -73,37 +74,41 @@ const Playlist = ({
 
   // Load track durations
   const loadTrackDurations = async () => {
-    const durations = {};
+    const durations = { ...trackDurations }; // Avoid recalculating existing durations
 
-    for (let i = 0; i < playlist.length; i++) {
-      const track = playlist[i];
-
-      if (track?.attributes?.src?.data?.attributes?.url) {
-        try {
-          const audio = new Audio(
-            getFullUrl(
-              track.attributes.src.data.attributes.url,
-              STRAPI_BASE_URL,
-            ),
-          );
-          await new Promise((resolve) => {
-            audio.addEventListener("loadedmetadata", () => {
-              durations[i] = audio.duration;
-              resolve();
-            });
-            audio.addEventListener("error", () => {
-              durations[i] = null;
-              resolve();
-            });
-          });
-        } catch (error) {
-          durations[i] = null;
+    const fetchDuration = (track, index) =>
+      new Promise((resolve) => {
+        if (!track?.attributes?.src?.data?.attributes?.url) {
+          durations[index] = null;
+          resolve();
+          return;
         }
-      }
-    }
 
-    setTrackDurations(durations);
+        const audio = new Audio(
+          getFullUrl(track.attributes.src.data.attributes.url, STRAPI_BASE_URL)
+        );
+        audio.addEventListener("loadedmetadata", () => {
+          durations[index] = audio.duration;
+          resolve();
+        });
+        audio.addEventListener("error", () => {
+          durations[index] = null;
+          resolve();
+        });
+      });
+
+    try {
+      await Promise.all(
+        playlist.map((track, index) =>
+          durations[index] === undefined ? fetchDuration(track, index) : null
+        )
+      );
+      setTrackDurations(durations); // Batch update after fetching all durations
+    } catch (error) {
+      console.error("Error fetching track durations:", error);
+    }
   };
+
 
   useEffect(() => {
     loadTrackDurations();
@@ -235,7 +240,7 @@ const Playlist = ({
     try {
       // Direct update of playlist tracks
       const updateResponse = await fetch(
-        `${STRAPI_BASE_URL}/api/playlists/${playlistId}?populate=songs`,
+        `${STRAPI_BASE_URL}/api/playlists/${playlistId}?populate=songs&sort[0]=id`,
         {
           method: "PUT",
           headers: {
@@ -266,6 +271,32 @@ const Playlist = ({
       alert("Failed to remove track from playlist");
     }
   };
+
+  const handleTrackClick = async (track, index) => {
+    onTrackSelect(index);
+
+    if (user && isAuthenticated) {
+      try {
+        const response = await axios.post('/api/recombee/addUserItemInteractions', {
+          userId: user.id, // ID người dùng
+          itemId: track.id, // ID bài hát
+          options: { timestamp: new Date().toISOString() }, // Metadata
+        });
+
+        console.log('Interaction logged successfully:', response.data);
+      } catch (error) {
+        console.error('Failed to log interaction:', error.response?.data || error.message);
+      }
+    } else {
+      console.log('User not authenticated');
+    }
+  };
+
+  const handleCombinedClick = (track, index) => {
+    onTrackSelect(index);
+    handleTrackClick(track, index);
+  };
+
 
   return (
     <div className="h-full overflow-y-auto min-h-[690px]">
@@ -445,10 +476,10 @@ const Playlist = ({
             return (
               <div
                 key={index}
-                className={`relative grid grid-cols-[auto,3fr,1fr,4fr,1fr,auto] gap-4 items-center px-8 py-4
+                className={`relative grid grid-cols-[auto,2fr,1fr,3fr,1fr,auto] gap-4 items-center px-8 py-4
                   hover:bg-gray-500 rounded-none cursor-pointer transition-colors group
                   ${isCurrentlyPlaying ? "bg-gray-500" : currentTrackIndex === index ? "bg-gray-2999" : ""}`}
-                onClick={() => onTrackSelect(index)}
+                onClick={() => handleCombinedClick(track, index)}
                 onMouseEnter={() => setHoveredTrackIndex(index)}
                 onMouseLeave={() => setHoveredTrackIndex(null)}
               >
@@ -489,7 +520,7 @@ const Playlist = ({
                   </div>
                 </div>
 
-                <div className="text-gray-200">
+                <div className="text-gray-200 text-center">
                   {track?.attributes.listenTime &&
                   typeof track.attributes.listenTime === "string"
                     ? track.attributes.listenTime.replace("$", "")
