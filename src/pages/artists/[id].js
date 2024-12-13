@@ -11,6 +11,14 @@ const ArtistPage = () => {
   const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
 
   useEffect(() => {
+    if (artist) {
+      document.title = `${artist.name}`; // Set the tab title to artist's name
+    } else {
+      document.title = "Artist - Music Page"; // Fallback title while loading
+    }
+  }, [artist]); // This effect runs every time `artist` changes
+
+  useEffect(() => {
     if (!id) return;
 
     const fetchArtistAndAlbums = async () => {

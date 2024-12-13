@@ -18,6 +18,14 @@ const PlaylistPage = () => {
   const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_BASE_URL;
 
   useEffect(() => {
+    if (playlistTitle) {
+      document.title = `${playlistTitle} - Playlist`; // Update the tab title with the playlist name
+    } else {
+      document.title = "Playlist"; // Fallback title if no playlist title
+    }
+  }, [playlistTitle]);
+
+  useEffect(() => {
     let isMounted = true;
 
     const fetchPlaylist = async () => {

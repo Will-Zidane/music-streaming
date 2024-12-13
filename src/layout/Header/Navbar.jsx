@@ -12,7 +12,7 @@ const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { logout, user } = useAuth();
   const router = useRouter();
-  const dropdownRef = useRef(null); // Ref to the dropdown container
+  const dropdownRef = useRef(null);
 
   const getAvatarUrl = (avatarUrl) => {
     if (!avatarUrl) return null;
@@ -57,7 +57,7 @@ const Navbar = () => {
     };
   }, [isDropdownOpen]);
 
-  // Fetch search suggestions
+  // Fetch search suggestions (Case-insensitive)
   useEffect(() => {
     const fetchSearchResults = async () => {
       if (searchQuery.trim() === '') {
@@ -66,8 +66,9 @@ const Navbar = () => {
       }
 
       try {
+        const lowercaseQuery = searchQuery.toLowerCase();
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_STRAPI_BASE_URL}/api/songs?populate=coverArt,authors&filters[$or][0][name][$contains]=${searchQuery}&filters[$or][1][authors][name][$contains]=${searchQuery}`
+          `${process.env.NEXT_PUBLIC_STRAPI_BASE_URL}/api/songs?populate=coverArt,authors&filters[$or][0][name][$containsi]=${lowercaseQuery}&filters[$or][1][authors][name][$containsi]=${lowercaseQuery}`
         );
         const data = await response.json();
         setSearchResults(data.data || []);
@@ -77,16 +78,16 @@ const Navbar = () => {
       }
     };
 
-    const debounceTimer = setTimeout(fetchSearchResults, 300); // Debounce to reduce API calls
+    const debounceTimer = setTimeout(fetchSearchResults, 300);
     return () => clearTimeout(debounceTimer);
   }, [searchQuery]);
 
   // Clear search results, close dropdown and refresh the search input when a song is selected
   const handleSongSelect = (songId, songName) => {
-    setSearchQuery(songName);  // Set the search query to the selected song's name
-    setSearchResults([]); // Clear search results
-    setIsDropdownOpen(false); // Close the dropdown
-    router.push(`/songs/${songId}`); // Navigate to the song detail page
+    setSearchQuery('');
+    setSearchResults([]);
+    setIsDropdownOpen(false);
+    router.push(`/songs/${songId}`);
   };
 
   return (
@@ -124,7 +125,7 @@ const Navbar = () => {
                       <li
                         key={result.id}
                         className="px-4 py-2 hover:bg-gray-600 text-white cursor-pointer"
-                        onClick={() => handleSongSelect(result.id, result.attributes.name)} // Call handleSongSelect
+                        onClick={() => handleSongSelect(result.id, result.attributes.name)}
                       >
                         <div className="flex items-center gap-3">
                           {/* Song CoverArt */}

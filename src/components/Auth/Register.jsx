@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+
   const { register } = useAuth();
 
   // Previous validation functions remain the same...

@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from "react";
+import { Check, Search, X } from "lucide-react";
 import Image from "next/image";
-import {  Search, X, Check } from "lucide-react";
-
+import { useEffect, useState } from "react";
 
 const AddSongsModal = ({
-                         isOpen,
-                         onClose,
-                         STRAPI_BASE_URL,
-                         playlistId,
-                         refreshPlaylist,
-                         currentPlaylistSongs
-
-                       }) => {
+  isOpen,
+  onClose,
+  STRAPI_BASE_URL,
+  playlistId,
+  refreshPlaylist,
+  currentPlaylistSongs,
+}) => {
   const [songs, setSongs] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [filteredSongs, setFilteredSongs] = useState([]);
   const [selectedSongs, setSelectedSongs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,17 +20,16 @@ const AddSongsModal = ({
   useEffect(() => {
     const fetchSongs = async () => {
       try {
-        const response = await fetch(
-          `${STRAPI_BASE_URL}/api/songs?populate=*`
-        );
+        const response = await fetch(`${STRAPI_BASE_URL}/api/songs?populate=*`);
         const data = await response.json();
 
         if (data.data) {
           // Filter out songs already in the playlist
-          const availableSongs = data.data.filter(song =>
-            !currentPlaylistSongs.some(playlistSong =>
-              playlistSong.id === song.id
-            )
+          const availableSongs = data.data.filter(
+            (song) =>
+              !currentPlaylistSongs.some(
+                (playlistSong) => playlistSong.id === song.id,
+              ),
           );
 
           setSongs(availableSongs);
@@ -52,14 +49,14 @@ const AddSongsModal = ({
   const handleSearchSongs = (query) => {
     setSearchQuery(query);
 
-    if (query.trim() === '') {
+    if (query.trim() === "") {
       setFilteredSongs(songs);
       return;
     }
 
-    const filtered = songs.filter(song => {
-      const name = song.attributes?.name || '';
-      const artist = song.attributes?.authors?.data[0]?.attributes?.name || '';
+    const filtered = songs.filter((song) => {
+      const name = song.attributes?.name || "";
+      const artist = song.attributes?.authors?.data[0]?.attributes?.name || "";
 
       return (
         name.toLowerCase().includes(query.toLowerCase()) ||
@@ -72,10 +69,10 @@ const AddSongsModal = ({
 
   // Toggle song selection
   const handleSongSelection = (songId) => {
-    setSelectedSongs(prev =>
+    setSelectedSongs((prev) =>
       prev.includes(songId)
-        ? prev.filter(id => id !== songId)
-        : [...prev, songId]
+        ? prev.filter((id) => id !== songId)
+        : [...prev, songId],
     );
   };
 
@@ -96,11 +93,11 @@ const AddSongsModal = ({
           body: JSON.stringify({
             data: {
               songs: {
-                connect: selectedSongs.map(id => ({ id }))
-              }
-            }
-          })
-        }
+                connect: selectedSongs.map((id) => ({ id })),
+              },
+            },
+          }),
+        },
       );
 
       if (!response.ok) {
@@ -112,11 +109,9 @@ const AddSongsModal = ({
         await refreshPlaylist();
       }
 
-
-
       // Reset and close modal
       setSelectedSongs([]);
-      setSearchQuery('');
+      setSearchQuery("");
       onClose();
       alert("Songs added to playlist successfully!");
     } catch (error) {
@@ -133,10 +128,15 @@ const AddSongsModal = ({
     <div className="fixed inset-0 bg-black-100 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-500 w-[500px] h-[600px] rounded-lg flex flex-col">
         <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-          <button onClick={onClose} className="hover:bg-gray-700 p-1 rounded-full">
+          <button
+            onClick={onClose}
+            className="hover:bg-gray-700 p-1 rounded-full"
+          >
             <X size={20} className="text-white" />
           </button>
-          <h2 className="text-xl font-bold text-white">Add Songs to Playlist</h2>
+          <h2 className="text-xl font-bold text-white">
+            Add Songs to Playlist
+          </h2>
         </div>
 
         {/* Search Bar */}
@@ -158,7 +158,7 @@ const AddSongsModal = ({
 
         {/* Songs List */}
         <div className="flex-1 overflow-y-auto">
-          {searchQuery.trim() === '' ? (
+          {searchQuery.trim() === "" ? (
             <div className="text-gray-400 text-center mt-4">
               Nhập từ khóa để tìm bài hát.
             </div>
@@ -185,9 +185,12 @@ const AddSongsModal = ({
                   )}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-white">{song.attributes.name}</div>
+                  <div className="font-medium text-white">
+                    {song.attributes.name}
+                  </div>
                   <div className="text-sm text-gray-400">
-                    {song.attributes.authors?.data[0]?.attributes.name || "Unknown Artist"}
+                    {song.attributes.authors?.data[0]?.attributes.name ||
+                      "Unknown Artist"}
                   </div>
                 </div>
                 <div className="w-6 h-6 rounded-full border border-gray-600 flex items-center justify-center">

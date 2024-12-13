@@ -9,6 +9,16 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (isAuthenticated) {
+      document.title = 'Profile'; // Set tab to "Profile" when authenticated
+    } else {
+      document.title = 'Login'; // Set tab to "Login" if not authenticated
+    }
+  }, [isAuthenticated]);
+
+
+
+  useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
       return;

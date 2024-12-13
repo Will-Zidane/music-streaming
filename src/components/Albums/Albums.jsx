@@ -2,8 +2,14 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { PlayCircle } from "lucide-react";
 import { getFullUrl, formatDuration } from "@/components/Playlist/Playlist";
+import Link from "next/link";
 
-const Albums = ({ album, currentTrackIndex, handleTrackChange, STRAPI_BASE_URL }) => {
+const Albums = ({
+  album,
+  currentTrackIndex,
+  handleTrackChange,
+  STRAPI_BASE_URL,
+}) => {
   const [trackDurations, setTrackDurations] = useState({});
 
   useEffect(() => {
@@ -62,11 +68,18 @@ const Albums = ({ album, currentTrackIndex, handleTrackChange, STRAPI_BASE_URL }
         </div>
         <div className="ml-6">
           <h1 className="text-4xl font-bold">{album.name}</h1>
-          <p className="text-gray-200">
+          <p className="text-text mt-2">
             Released by:{" "}
-            {album.authors.data.length > 0
-              ? album.authors.data[0].attributes.name
-              : "Unknown"}
+            <Link
+              key={album.authors.data[0].id}
+              href={`/artists/${album.authors.data[0].id}`}
+              className={"hover:text-gray-200"}
+            >
+              {" "}
+              {album.authors.data.length > 0
+                ? album.authors.data[0].attributes.name
+                : "Unknown"}{" "}
+            </Link>
           </p>
         </div>
       </div>
@@ -89,8 +102,8 @@ const Albums = ({ album, currentTrackIndex, handleTrackChange, STRAPI_BASE_URL }
                 key={index}
                 className={`grid grid-cols-[auto,3fr,2fr,1fr] gap-4 items-center px-8 py-4
                   hover:bg-gray-500 rounded-none cursor-pointer transition-colors ${
-                  isPlaying ? "bg-gray-500" : "hover:bg-gray-500"
-                } rounded-none cursor-pointer transition-colors`}
+                    isPlaying ? "bg-gray-500" : "hover:bg-gray-500"
+                  } rounded-none cursor-pointer transition-colors`}
                 onClick={() => handleTrackChange(index, album.songs.data)}
               >
                 <div className="relative w-6 flex items-center justify-center">

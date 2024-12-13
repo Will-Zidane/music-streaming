@@ -960,6 +960,7 @@ export interface ApiSongSong extends Schema.CollectionType {
     >;
     coverArt: Attribute.Media<"images" | "files" | "videos" | "audios">;
     listenTime: Attribute.Integer;
+    lyrics: Attribute.Text;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

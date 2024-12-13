@@ -25,11 +25,55 @@ export default function Layout({ children, title, desc }) {
   };
 
   // If on login page, render a simplified layout
-  if (isLoginPage || isProfilePage || isPaymentPage || isRegisterPage || isForgotPasswordPage) {
+  if (isLoginPage ) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Head>
           <title>{title ? `${title}` : "Login - Music Streaming"}</title>
+          {desc && <meta name="description" content={desc} />}
+        </Head>
+        {children}
+      </div>
+    );
+  }
+  if ( isProfilePage ) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Head>
+          <title>{title ? `${title}` : "Profile"}</title>
+          {desc && <meta name="description" content={desc} />}
+        </Head>
+        {children}
+      </div>
+    );
+  }
+  if ( isPaymentPage ) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Head>
+          <title>{title ? `${title}` : "Payment"}</title>
+          {desc && <meta name="description" content={desc} />}
+        </Head>
+        {children}
+      </div>
+    );
+  }
+  if( isRegisterPage ) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Head>
+          <title>{title ? `${title}` : "Register"}</title>
+          {desc && <meta name="description" content={desc} />}
+        </Head>
+        {children}
+      </div>
+    );
+  }
+  if (isForgotPasswordPage) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Head>
+          <title>{title ? `${title}` : "Forgot Password"}</title>
           {desc && <meta name="description" content={desc} />}
         </Head>
         {children}
@@ -44,7 +88,7 @@ export default function Layout({ children, title, desc }) {
     </Head>
     <Navbar />
 
-    <div className="flex-1 mt-16 mb-20 bg-gray-100">
+    <div className="flex-1 mt-16 mb-20 bg-gray-100 ">
       <PanelGroup direction="horizontal" className="h-full">
         {/* Left Panel with Library */}
         <Panel
