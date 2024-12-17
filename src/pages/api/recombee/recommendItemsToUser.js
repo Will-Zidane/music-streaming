@@ -1,4 +1,3 @@
-// pages/api/recombee/recommendItemsToUser.js
 import { recommendItemsToUser } from '@/utils/recombee';
 
 export default async function handler(req, res) {
