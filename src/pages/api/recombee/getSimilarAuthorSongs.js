@@ -1,16 +1,18 @@
-import { getSimilarAuthorSongs } from '@/utils/recombee'; // Hàm lấy các bài hát tương tự từ Recombee
+// /pages/api/recomee/getSimilarAuthorSongs.js
+import { getSimilarAuthorSongs } from '@/utils/recombee';  // Hàm lấy các bài hát tương tự từ Recombee
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
-      const { userId, count } = req.body;  // authorId và count là dữ liệu bạn nhận từ body của yêu cầu
+      const { userId, itemId, count } = req.body;  // Lấy userId, itemId và count từ body
 
-      if (!userId) {
-        return res.status(400).json({ error: 'authorId is required' });
+
+      if (!userId || !itemId || !count) {
+        return res.status(400).json({ error: 'userId, itemId, and count are required' });
       }
 
       // Lấy các bài hát tương tự từ tác giả
-      const similarSongs = await getSimilarAuthorSongs(userId, count);
+      const similarSongs = await getSimilarAuthorSongs(itemId, userId, count);
 
       // Kiểm tra kết quả và trả về
       if (!similarSongs || similarSongs.length === 0) {

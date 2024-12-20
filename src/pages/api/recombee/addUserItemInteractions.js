@@ -1,6 +1,9 @@
 // pages/api/recombee/addUserItemInteractions.js
 import { addDetailView } from '@/utils/recombee';
 
+
+
+
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
